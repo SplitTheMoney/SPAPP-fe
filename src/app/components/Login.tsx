@@ -9,6 +9,7 @@ import {
   Container
 } from "@mui/material";
 import { FolderShared } from "@mui/icons-material";
+import { login } from "../service/authService";
 
 export function Login() {
   const navigate = useNavigate();
@@ -17,7 +18,13 @@ export function Login() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate("/dashboard");
+    login(email, password).then((result) =>{
+      if(result){
+        console.log("RESULT---->", result.email, result.password)
+        navigate("/dashboard");
+      }
+    })
+  
   };
 
   return (
