@@ -7,13 +7,19 @@ export type LoginResponse = {
   token: string;
 };
 
+export type User = {
+  name: string,
+  email: string,
+  department: string,
+  role: "EMPLOYEE" | "MANAGER" | "ADMIN"
+}
+
 export type AccessRequest = {
   id: number;
-  user: string;
-  email: string;
-  department: string;
-  folder: string;
-  date: string;
+  employee: User;
+  manager: User;
+  folder: SharedFolder;
+  createdAt: string;
   status: "CREATED" | "APPROVED" | "REJECTED";
   justification: string;
   reviewedBy: string;
