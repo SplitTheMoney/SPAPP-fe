@@ -151,7 +151,7 @@ const getStatusColor = (status: string) => {
 export function RequestHistory() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [selectedRequest, setSelectedRequest] = useState<AccessRequest | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -279,7 +279,7 @@ export function RequestHistory() {
                   </TableCell>
                   <TableCell>{request.employee.name}</TableCell>
                   <TableCell>{request.folder.path}</TableCell>
-                  <TableCell>{request.createdAt}</TableCell>
+                  <TableCell>{new Date(request.createdAt).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <Chip
                       label={request.status}
@@ -343,10 +343,10 @@ export function RequestHistory() {
                           Requester
                         </Typography>
                         <Typography variant="body1" fontWeight={500}>
-                          {selectedRequest.user}
+                          {selectedRequest.employee.name}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {selectedRequest.email}
+                          {selectedRequest.employee.email}
                         </Typography>
                       </Box>
                     </Box>
@@ -360,7 +360,7 @@ export function RequestHistory() {
                           Request Date
                         </Typography>
                         <Typography variant="body1" fontWeight={500}>
-                          {selectedRequest.date}
+                          {new Date(selectedRequest.createdAt).toLocaleDateString()}
                         </Typography>
                       </Box>
                     </Box>
@@ -374,7 +374,7 @@ export function RequestHistory() {
                           Shared Folder
                         </Typography>
                         <Typography variant="body1" fontWeight={500}>
-                          {selectedRequest.folder}
+                          {selectedRequest.folder.path}
                         </Typography>
                       </Box>
                     </Box>
@@ -388,7 +388,7 @@ export function RequestHistory() {
                           Department
                         </Typography>
                         <Typography variant="body1" fontWeight={500}>
-                          {selectedRequest.department}
+                          {selectedRequest.employee.department}
                         </Typography>
                       </Box>
                     </Box>
@@ -406,7 +406,7 @@ export function RequestHistory() {
                   </Paper>
                 </Box>
 
-                {selectedRequest.status !== "Pending" && (
+                {selectedRequest.status !== "CREATED" && (
                   <>
                     <Divider sx={{ my: 3 }} />
 
@@ -414,17 +414,17 @@ export function RequestHistory() {
                       sx={{
                         p: 3,
                         borderRadius: 2,
-                        backgroundColor: selectedRequest.status === "Approved" ? "#e8f5e9" : "#ffebee",
+                        backgroundColor: selectedRequest.status === "APPROVED" ? "#e8f5e9" : "#ffebee",
                       }}
                     >
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-                        {selectedRequest.status === "Approved" ? (
+                        {selectedRequest.status === "APPROVED" ? (
                           <CheckCircle color="success" />
                         ) : (
                           <Cancel color="error" />
                         )}
                         <Typography variant="h6" fontWeight={600}>
-                          {selectedRequest.status === "Approved" ? "Approved" : "Rejected"}
+                          {selectedRequest.status === "APPROVED" ? "Approved" : "Rejected"}
                         </Typography>
                       </Box>
 
@@ -434,7 +434,7 @@ export function RequestHistory() {
                             Reviewed By
                           </Typography>
                           <Typography variant="body1" fontWeight={500}>
-                            {selectedRequest.reviewedBy}
+                            {selectedRequest.manager.name}
                           </Typography>
                         </Grid>
                         <Grid item xs={12} sm={6}>
@@ -442,18 +442,18 @@ export function RequestHistory() {
                             Review Date
                           </Typography>
                           <Typography variant="body1" fontWeight={500}>
-                            {selectedRequest.reviewDate}
+                            {new Date(selectedRequest.decisionDate).toLocaleDateString()}
                           </Typography>
                         </Grid>
                       </Grid>
 
-                      {selectedRequest.reviewComments && (
+                      {selectedRequest.rejectionReason && (
                         <Box sx={{ mt: 2 }}>
                           <Typography variant="caption" color="text.secondary">
-                            {selectedRequest.status === "Approved" ? "Comments" : "Rejection Reason"}
+                            {selectedRequest.status === "APPROVED" ? "Comments" : "Rejection Reason"}
                           </Typography>
                           <Typography variant="body2" sx={{ mt: 0.5 }}>
-                            {selectedRequest.reviewComments}
+                            {selectedRequest.rejectionReason}
                           </Typography>
                         </Box>
                       )}
