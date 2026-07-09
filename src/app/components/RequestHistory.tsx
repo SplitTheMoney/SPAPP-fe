@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Paper,
@@ -25,6 +25,8 @@ import {
   useTheme,
 } from "@mui/material";
 import { Search, FilterList, Visibility, Person, Folder, CalendarToday, Description, CheckCircle, Cancel } from "@mui/icons-material";
+import { getAccessRequests } from "../service/accessRequestService";
+import { AccessRequest } from "../types/types";
 
 const allRequests = [
   {
@@ -154,6 +156,28 @@ export function RequestHistory() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
+   const [requests, setRequests] = useState<AccessRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadRequests = async () => {
+      try {
+        const data = await getAccessRequests();
+        setRequests(data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadRequests();
+  }, []);
+
+  if (loading) {
+    return <p>Loading...</p>;
+  }
+
   const filteredRequests = allRequests.filter((request) => {
     const matchesSearch =
       request.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -227,7 +251,7 @@ export function RequestHistory() {
       <Paper sx={{ borderRadius: 2, overflow: "hidden" }}>
         <Box sx={{ p: { xs: 2, sm: 3 }, borderBottom: "1px solid #e0e0e0" }}>
           <Typography variant="h6" fontWeight={600} sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }}>
-            All Requests ({filteredRequests.length})
+            All Requests ({requests.length})
           </Typography>
         </Box>
         <TableContainer sx={{ overflowX: "auto" }}>
@@ -243,7 +267,7 @@ export function RequestHistory() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredRequests.map((request) => (
+              {requests.map((request) => (
                 <TableRow
                   key={request.id}
                   sx={{
