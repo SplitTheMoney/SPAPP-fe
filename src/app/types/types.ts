@@ -6,3 +6,10 @@ export type LoginRequest = {
 export type LoginResponse = {
   token: string;
 };
+
+export type SharedFolder = {
+  id: number;
+  name: string;
+  path: string;
+  description: string;
+}

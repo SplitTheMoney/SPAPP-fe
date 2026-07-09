@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Paper,
@@ -9,8 +9,11 @@ import {
   Alert,
 } from "@mui/material";
 import { Send } from "@mui/icons-material";
+import { getAllFolders } from "../service/sharedFolderService";
+import { SharedFolder } from "../types/types";
+import { createRequest } from "../service/accessRequestService";
 
-const sharedFolders = [
+/*const sharedFolders = [
   "Finance/Q4-Reports",
   "HR/Employee-Records",
   "IT/Server-Configs",
@@ -19,21 +22,39 @@ const sharedFolders = [
   "Legal/Contracts",
   "Operations/Procedures",
   "Research/Projects",
-];
+];*/
 
 export function CreateRequest() {
-  const [folder, setFolder] = useState("");
+  const [sharedFolders, setSharedFolders] = useState<SharedFolder[]>([]);
+  const [folder, setFolder] = useState(-1);
   const [justification, setJustification] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useState(0);
+
+  useEffect(() => {
+    const loadFolders = async () => {
+      try {
+        const folders = await getAllFolders();
+        setSharedFolders(folders);
+      } catch (error) {
+        console.error("Failed to load folders", error);
+      }
+    }
+
+    loadFolders();
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => {
-      setFolder("");
+    //setSubmitted(true);
+    createRequest(folder, justification).then((result) => {
+      setFolder(-1);
       setJustification("");
-      setSubmitted(false);
-    }, 3000);
+      if (result === 200) setSubmitted(1);
+      else setSubmitted(2);
+      setTimeout(() =>{
+        setSubmitted(0);
+      }, 3000);
+    })
   };
 
   return (
@@ -48,9 +69,15 @@ export function CreateRequest() {
       </Typography>
 
       <Paper sx={{ p: { xs: 2, sm: 3, md: 4 }, maxWidth: 800, borderRadius: 2 }}>
-        {submitted && (
+        {submitted === 1 && (
           <Alert severity="success" sx={{ mb: 3 }}>
             Access request submitted successfully! You will be notified once it's reviewed.
+          </Alert>
+        )}
+
+        {submitted === 2 && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            Failed to submit the access request. Please try again later.
           </Alert>
         )}
 
@@ -64,13 +91,13 @@ export function CreateRequest() {
                 select
                 fullWidth
                 value={folder}
-                onChange={(e) => setFolder(e.target.value)}
+                onChange={(e) => setFolder(Number(e.target.value))}
                 required
                 placeholder="Select a folder"
               >
-                {sharedFolders.map((option) => (
-                  <MenuItem key={option} value={option}>
-                    {option}
+                {sharedFolders.map((folder) => (
+                  <MenuItem key={folder.id} value={folder.id}>
+                    {folder.path}
                   </MenuItem>
                 ))}
               </TextField>
