@@ -20,3 +20,10 @@ export type AccessRequest = {
   reviewDate: string;
   reviewComments: string;
 };
+
+export type SharedFolder = {
+  id: number;
+  name: string;
+  path: string;
+  description: string;
+}
