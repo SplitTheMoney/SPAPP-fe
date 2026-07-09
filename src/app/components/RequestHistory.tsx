@@ -137,11 +137,11 @@ const allRequests = [
 
 const getStatusColor = (status: string) => {
   switch (status) {
-    case "Pending":
+    case "CREATED":
       return "warning";
-    case "Approved":
+    case "APPROVED":
       return "success";
-    case "Rejected":
+    case "REJECTED":
       return "error";
     default:
       return "default";
@@ -277,9 +277,9 @@ export function RequestHistory() {
                   <TableCell sx={{ fontWeight: 500, color: "#1976d2" }}>
                     {request.id}
                   </TableCell>
-                  <TableCell>{request.user}</TableCell>
-                  <TableCell>{request.folder}</TableCell>
-                  <TableCell>{request.date}</TableCell>
+                  <TableCell>{request.employeeName}</TableCell>
+                  <TableCell>{request.folderName}</TableCell>
+                  <TableCell>{request.createdAt.toDateString()}</TableCell>
                   <TableCell>
                     <Chip
                       label={request.status}
