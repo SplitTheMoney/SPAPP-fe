@@ -22,9 +22,8 @@ export type AccessRequest = {
   createdAt: string;
   status: "CREATED" | "APPROVED" | "REJECTED";
   justification: string;
-  reviewedBy: string;
-  reviewDate: string;
-  reviewComments: string;
+  decisionDate: string;
+  rejectionReason: string;
 };
 
 export type SharedFolder = {
