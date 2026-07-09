@@ -13,17 +13,6 @@ import { getAllFolders } from "../service/sharedFolderService";
 import { SharedFolder } from "../types/types";
 import { createRequest } from "../service/accessRequestService";
 
-/*const sharedFolders = [
-  "Finance/Q4-Reports",
-  "HR/Employee-Records",
-  "IT/Server-Configs",
-  "Marketing/Campaigns",
-  "Sales/Q2-Data",
-  "Legal/Contracts",
-  "Operations/Procedures",
-  "Research/Projects",
-];*/
-
 export function CreateRequest() {
   const [sharedFolders, setSharedFolders] = useState<SharedFolder[]>([]);
   const [folder, setFolder] = useState(-1);
@@ -45,7 +34,6 @@ export function CreateRequest() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    //setSubmitted(true);
     createRequest(folder, justification).then((result) => {
       setFolder(-1);
       setJustification("");

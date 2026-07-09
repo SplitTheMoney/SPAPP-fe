@@ -156,7 +156,7 @@ export function RequestHistory() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-   const [requests, setRequests] = useState<AccessRequest[]>([]);
+  const [requests, setRequests] = useState<AccessRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -277,9 +277,9 @@ export function RequestHistory() {
                   <TableCell sx={{ fontWeight: 500, color: "#1976d2" }}>
                     {request.id}
                   </TableCell>
-                  <TableCell>{request.user}</TableCell>
-                  <TableCell>{request.folder}</TableCell>
-                  <TableCell>{request.date}</TableCell>
+                  <TableCell>{request.employee.name}</TableCell>
+                  <TableCell>{request.folder.path}</TableCell>
+                  <TableCell>{request.createdAt}</TableCell>
                   <TableCell>
                     <Chip
                       label={request.status}
