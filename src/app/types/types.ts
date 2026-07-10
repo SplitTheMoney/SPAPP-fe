@@ -23,9 +23,9 @@ export type AccessRequest = {
   accessType: "READ" | "WRITE",
   status: "CREATED" | "REJECTED" | "APPROVED",
   rejectionReason?: string,
-  expirationDate?: Date,
-  createdAt: Date,
-  decisionDate?: Date
+  expirationDate?: string,
+  createdAt: string,
+  decisionDate?: string
 }
 
 export type SharedFolder = {
@@ -54,7 +54,7 @@ export type AccessRequestResponseDTO = {
   accessType: "READ" | "WRITE",
   status: "CREATED" | "REJECTED" | "APPROVED",
   rejectionReason?: string,
-  expirationDate?: Date,
-  createdAt: Date,
-  decisionDate?: Date
+  expirationDate?: string,
+  createdAt: string,
+  decisionDate?: string
 }

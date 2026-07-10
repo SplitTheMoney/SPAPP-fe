@@ -31,6 +31,7 @@ export function CreateRequest() {
   const [justification, setJustification] = useState<string>("");
   const [submitted, setSubmitted] = useState(0);
   const [error, setError] = useState<string>("");
+  const [disableButton, setDisableButton] = useState(false);
 
   useEffect(() => {
     const loadFolders = async () => {
@@ -48,6 +49,7 @@ export function CreateRequest() {
   const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
     try {
+      setDisableButton(true);
       let request = await createRequest({folderId, accessType, justification})
       setFolderId(-1);
       setJustification("");
@@ -59,6 +61,7 @@ export function CreateRequest() {
       setSubmitted(2);
 
     } finally {
+      setDisableButton(false);
       setTimeout(() =>{
         setSubmitted(0);
       }, 3000);
@@ -118,15 +121,15 @@ export function CreateRequest() {
               <TextField
                 select
                 fullWidth
-                value={accessType=="READ"?"Read":"Write"}
+                value={accessType}
                 onChange={(e) => setAccessType(e.target.value as "READ" | "WRITE")}
                 required
                 placeholder="Access"
               >
-                <MenuItem key="1" value="READ">
+                <MenuItem key="READ" value="READ">
                   Read
                 </MenuItem>
-                <MenuItem key="2" value="WRITE">
+                <MenuItem key="WRITE" value="WRITE">
                   Write
                 </MenuItem>
               </TextField>
@@ -153,8 +156,9 @@ export function CreateRequest() {
               size="large"
               startIcon={<Send />}
               sx={{ alignSelf: "flex-start", px: 4 }}
+              disabled={disableButton}
             >
-              Submit Request
+              {disableButton ? "Submitting..." : "Submit Request"}
             </Button>
           </Box>
         </form>

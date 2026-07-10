@@ -24,7 +24,7 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { Search, FilterList, Visibility, Person, Folder, CalendarToday, Description, CheckCircle, Cancel } from "@mui/icons-material";
+import { Search, FilterList, Visibility, Person, Folder, CalendarToday, Description, CheckCircle, Cancel, EditDocument } from "@mui/icons-material";
 import { getAccessRequests } from "../service/accessRequestService";
 import { AccessRequest } from "../types/types";
 
@@ -151,12 +151,12 @@ const getStatusColor = (status: string) => {
 export function RequestHistory() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [selectedRequest, setSelectedRequest] = useState<AccessRequest | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-   const [requests, setRequests] = useState<AccessRequest[]>([]);
+  const [requests, setRequests] = useState<AccessRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -178,16 +178,16 @@ export function RequestHistory() {
     return <p>Loading...</p>;
   }
 
-  const filteredRequests = allRequests.filter((request) => {
+  const filteredRequests = requests.filter((request) => {
     const matchesSearch =
-      request.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.folder.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.user.toLowerCase().includes(searchTerm.toLowerCase());
+      request.id.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.folderName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.employeeName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "All" || request.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  const handleViewDetails = (request: any) => {
+  const handleViewDetails = (request: AccessRequest) => {
     setSelectedRequest(request);
     setOpenDialog(true);
   };
@@ -240,9 +240,9 @@ export function RequestHistory() {
               }}
             >
               <MenuItem value="All">All Status</MenuItem>
-              <MenuItem value="Pending">Pending</MenuItem>
-              <MenuItem value="Approved">Approved</MenuItem>
-              <MenuItem value="Rejected">Rejected</MenuItem>
+              <MenuItem value="CREATED">Pending</MenuItem>
+              <MenuItem value="APPROVED">Approved</MenuItem>
+              <MenuItem value="REJECTED">Rejected</MenuItem>
             </TextField>
           </Grid>
         </Grid>
@@ -267,7 +267,7 @@ export function RequestHistory() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {requests.map((request) => (
+              {filteredRequests.map((request) => (
                 <TableRow
                   key={request.id}
                   sx={{
@@ -279,7 +279,7 @@ export function RequestHistory() {
                   </TableCell>
                   <TableCell>{request.employeeName}</TableCell>
                   <TableCell>{request.folderName}</TableCell>
-                  <TableCell>{request.createdAt.toDateString()}</TableCell>
+                  <TableCell>{new Date(request.createdAt).toDateString()}</TableCell>
                   <TableCell>
                     <Chip
                       label={request.status}
@@ -343,10 +343,10 @@ export function RequestHistory() {
                           Requester
                         </Typography>
                         <Typography variant="body1" fontWeight={500}>
-                          {selectedRequest.user}
+                          {selectedRequest.employeeName}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {selectedRequest.email}
+                          {selectedRequest.employeeEmail}
                         </Typography>
                       </Box>
                     </Box>
@@ -360,7 +360,7 @@ export function RequestHistory() {
                           Request Date
                         </Typography>
                         <Typography variant="body1" fontWeight={500}>
-                          {selectedRequest.date}
+                          {selectedRequest.createdAt}
                         </Typography>
                       </Box>
                     </Box>
@@ -374,7 +374,7 @@ export function RequestHistory() {
                           Shared Folder
                         </Typography>
                         <Typography variant="body1" fontWeight={500}>
-                          {selectedRequest.folder}
+                          {selectedRequest.folderName}
                         </Typography>
                       </Box>
                     </Box>
@@ -393,6 +393,20 @@ export function RequestHistory() {
                       </Box>
                     </Box>
                   </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+                      <EditDocument color="action" />
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          Access
+                        </Typography>
+                        <Typography variant="body1" fontWeight={500}>
+                          {selectedRequest.accessType === "READ" ? "Read" : "Write"}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Grid>
                 </Grid>
 
                 <Divider sx={{ my: 3 }} />
@@ -406,7 +420,7 @@ export function RequestHistory() {
                   </Paper>
                 </Box>
 
-                {selectedRequest.status !== "Pending" && (
+                {selectedRequest.status !== "CREATED" && (
                   <>
                     <Divider sx={{ my: 3 }} />
 
@@ -414,17 +428,17 @@ export function RequestHistory() {
                       sx={{
                         p: 3,
                         borderRadius: 2,
-                        backgroundColor: selectedRequest.status === "Approved" ? "#e8f5e9" : "#ffebee",
+                        backgroundColor: selectedRequest.status === "APPROVED" ? "#e8f5e9" : "#ffebee",
                       }}
                     >
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-                        {selectedRequest.status === "Approved" ? (
+                        {selectedRequest.status === "APPROVED" ? (
                           <CheckCircle color="success" />
                         ) : (
                           <Cancel color="error" />
                         )}
                         <Typography variant="h6" fontWeight={600}>
-                          {selectedRequest.status === "Approved" ? "Approved" : "Rejected"}
+                          {selectedRequest.status === "APPROVED" ? "Approved" : "Rejected"}
                         </Typography>
                       </Box>
 
@@ -434,7 +448,7 @@ export function RequestHistory() {
                             Reviewed By
                           </Typography>
                           <Typography variant="body1" fontWeight={500}>
-                            {selectedRequest.reviewedBy}
+                            {selectedRequest.managerName}
                           </Typography>
                         </Grid>
                         <Grid item xs={12} sm={6}>
@@ -442,18 +456,18 @@ export function RequestHistory() {
                             Review Date
                           </Typography>
                           <Typography variant="body1" fontWeight={500}>
-                            {selectedRequest.reviewDate}
+                            {selectedRequest.decisionDate ? new Date(selectedRequest.decisionDate).toDateString() : "N/A"}
                           </Typography>
                         </Grid>
                       </Grid>
 
-                      {selectedRequest.reviewComments && (
+                      {selectedRequest.rejectionReason && (
                         <Box sx={{ mt: 2 }}>
                           <Typography variant="caption" color="text.secondary">
-                            {selectedRequest.status === "Approved" ? "Comments" : "Rejection Reason"}
+                            {selectedRequest.status === "APPROVED" ? "Comments" : "Rejection Reason"}
                           </Typography>
                           <Typography variant="body2" sx={{ mt: 0.5 }}>
-                            {selectedRequest.reviewComments}
+                            {selectedRequest.rejectionReason}
                           </Typography>
                         </Box>
                       )}

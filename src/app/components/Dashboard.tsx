@@ -17,83 +17,18 @@ import {
   Cancel,
   Folder,
 } from "@mui/icons-material";
+import { getAccessRequests } from "../service/accessRequestService";
+import { useEffect, useState } from "react";
+import { AccessRequest } from "../types/types";
 
-const stats = [
-  {
-    title: "Pending Requests",
-    value: 12,
-    icon: <PendingActions sx={{ fontSize: 40 }} />,
-    color: "#ff9800",
-    bgColor: "#fff3e0",
-  },
-  {
-    title: "Approved Requests",
-    value: 45,
-    icon: <CheckCircle sx={{ fontSize: 40 }} />,
-    color: "#4caf50",
-    bgColor: "#e8f5e9",
-  },
-  {
-    title: "Rejected Requests",
-    value: 8,
-    icon: <Cancel sx={{ fontSize: 40 }} />,
-    color: "#f44336",
-    bgColor: "#ffebee",
-  },
-  {
-    title: "Total Folders",
-    value: 23,
-    icon: <Folder sx={{ fontSize: 40 }} />,
-    color: "#1976d2",
-    bgColor: "#e3f2fd",
-  },
-];
-
-const recentRequests = [
-  {
-    id: "REQ-2024-001",
-    user: "John Smith",
-    folder: "Finance/Q4-Reports",
-    date: "2026-05-28",
-    status: "Pending",
-  },
-  {
-    id: "REQ-2024-002",
-    user: "Sarah Johnson",
-    folder: "HR/Employee-Records",
-    date: "2026-05-27",
-    status: "Approved",
-  },
-  {
-    id: "REQ-2024-003",
-    user: "Mike Davis",
-    folder: "IT/Server-Configs",
-    date: "2026-05-26",
-    status: "Pending",
-  },
-  {
-    id: "REQ-2024-004",
-    user: "Emily Chen",
-    folder: "Marketing/Campaigns",
-    date: "2026-05-25",
-    status: "Rejected",
-  },
-  {
-    id: "REQ-2024-005",
-    user: "Robert Taylor",
-    folder: "Sales/Q2-Data",
-    date: "2026-05-24",
-    status: "Approved",
-  },
-];
 
 const getStatusColor = (status: string) => {
   switch (status) {
-    case "Pending":
+    case "CREATED":
       return "warning";
-    case "Approved":
+    case "APPROVED":
       return "success";
-    case "Rejected":
+    case "REJECTED":
       return "error";
     default:
       return "default";
@@ -101,6 +36,72 @@ const getStatusColor = (status: string) => {
 };
 
 export function Dashboard() {
+  const [requests, setRequests] = useState<AccessRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const pendingRequests = requests.filter(
+    (r) => r.status === "CREATED"
+  ).length;
+
+  const approvedRequests = requests.filter(
+    (r) => r.status === "APPROVED"
+  ).length;
+
+  const rejectedRequests = requests.filter(
+    (r) => r.status === "REJECTED"
+  ).length;
+
+  const stats = [
+    {
+      title: "Pending Requests",
+      value: pendingRequests,
+      icon: <PendingActions sx={{ fontSize: 40 }} />,
+      color: "#ff9800",
+      bgColor: "#fff3e0",
+    },
+    {
+      title: "Approved Requests",
+      value: approvedRequests,
+      icon: <CheckCircle sx={{ fontSize: 40 }} />,
+      color: "#4caf50",
+      bgColor: "#e8f5e9",
+    },
+    {
+      title: "Rejected Requests",
+      value: rejectedRequests,
+      icon: <Cancel sx={{ fontSize: 40 }} />,
+      color: "#f44336",
+      bgColor: "#ffebee",
+    },
+    {
+      title: "Total Folders",
+      value: requests.length,
+      icon: <Folder sx={{ fontSize: 40 }} />,
+      color: "#1976d2",
+      bgColor: "#e3f2fd",
+    },
+  ];
+
+
+  useEffect(() => {
+    const loadRequests = async () => {
+      try {
+        const data = await getAccessRequests();
+        setRequests(data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadRequests();
+  }, []);
+
+  if (loading) {
+    return <p>Loading...</p>;
+  }
+
   return (
     <Box>
       <Typography
@@ -185,7 +186,7 @@ export function Dashboard() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {recentRequests.map((request) => (
+              {requests.slice(0, 5).map((request) => (
                 <TableRow
                   key={request.id}
                   sx={{
@@ -195,9 +196,9 @@ export function Dashboard() {
                   <TableCell sx={{ fontWeight: 500, color: "#1976d2" }}>
                     {request.id}
                   </TableCell>
-                  <TableCell>{request.user}</TableCell>
-                  <TableCell>{request.folder}</TableCell>
-                  <TableCell>{request.date}</TableCell>
+                  <TableCell>{request.employeeName}</TableCell>
+                  <TableCell>{request.folderName}</TableCell>
+                  <TableCell>{new Date(request.createdAt).toDateString()}</TableCell>
                   <TableCell>
                     <Chip
                       label={request.status}
