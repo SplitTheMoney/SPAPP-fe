@@ -28,112 +28,6 @@ import { Search, FilterList, Visibility, Person, Folder, CalendarToday, Descript
 import { getAccessRequests } from "../service/accessRequestService";
 import { AccessRequest } from "../types/types";
 
-const allRequests = [
-  {
-    id: "REQ-2024-001",
-    user: "John Smith",
-    email: "john.smith@company.com",
-    department: "Finance",
-    folder: "Finance/Q4-Reports",
-    date: "2026-05-28",
-    status: "Pending",
-    justification: "I need access to Q4 financial reports to prepare the annual budget presentation for the board meeting next week. This data is essential for accurate forecasting and strategic planning.",
-    reviewedBy: null,
-    reviewDate: null,
-    reviewComments: null,
-  },
-  {
-    id: "REQ-2024-002",
-    user: "Sarah Johnson",
-    email: "sarah.johnson@company.com",
-    department: "HR",
-    folder: "HR/Employee-Records",
-    date: "2026-05-27",
-    status: "Approved",
-    justification: "As HR Manager, I require access to employee records for conducting performance reviews and managing personnel files.",
-    reviewedBy: "Robert Taylor (Administrator)",
-    reviewDate: "2026-05-27",
-    reviewComments: "Approved - valid business need and appropriate role.",
-  },
-  {
-    id: "REQ-2024-003",
-    user: "Mike Davis",
-    email: "mike.davis@company.com",
-    department: "IT",
-    folder: "IT/Server-Configs",
-    date: "2026-05-26",
-    status: "Pending",
-    justification: "Requesting read access to review server configuration files as part of the security audit. This is required to ensure compliance with our security policies and identify potential vulnerabilities.",
-    reviewedBy: null,
-    reviewDate: null,
-    reviewComments: null,
-  },
-  {
-    id: "REQ-2024-004",
-    user: "Emily Chen",
-    email: "emily.chen@company.com",
-    department: "Marketing",
-    folder: "Marketing/Campaigns",
-    date: "2026-05-25",
-    status: "Rejected",
-    justification: "Need access to view marketing campaign materials for a competitor analysis project.",
-    reviewedBy: "Lisa Anderson (Manager)",
-    reviewDate: "2026-05-25",
-    reviewComments: "Request denied - insufficient business justification. Competitor analysis does not require direct access to internal campaign files. Please work with the Marketing Manager who can provide the necessary information through proper channels.",
-  },
-  {
-    id: "REQ-2024-005",
-    user: "Robert Taylor",
-    email: "robert.taylor@company.com",
-    department: "Sales",
-    folder: "Sales/Q2-Data",
-    date: "2026-05-24",
-    status: "Approved",
-    justification: "Access needed to analyze Q2 sales performance and prepare reports for executive review.",
-    reviewedBy: "Robert Taylor (Administrator)",
-    reviewDate: "2026-05-24",
-    reviewComments: "Approved - legitimate business requirement.",
-  },
-  {
-    id: "REQ-2024-006",
-    user: "Lisa Anderson",
-    email: "lisa.anderson@company.com",
-    department: "Legal",
-    folder: "Legal/Contracts",
-    date: "2026-05-23",
-    status: "Approved",
-    justification: "Need access to review vendor contracts for the upcoming audit.",
-    reviewedBy: "Robert Taylor (Administrator)",
-    reviewDate: "2026-05-23",
-    reviewComments: "Approved - valid audit requirement.",
-  },
-  {
-    id: "REQ-2024-007",
-    user: "David Wilson",
-    email: "david.wilson@company.com",
-    department: "Operations",
-    folder: "Operations/Procedures",
-    date: "2026-05-22",
-    status: "Pending",
-    justification: "I need write access to update standard operating procedures based on recent process improvements. These updates are critical for maintaining documentation accuracy and operational efficiency.",
-    reviewedBy: null,
-    reviewDate: null,
-    reviewComments: null,
-  },
-  {
-    id: "REQ-2024-008",
-    user: "Jennifer Lee",
-    email: "jennifer.lee@company.com",
-    department: "Research",
-    folder: "Research/Projects",
-    date: "2026-05-21",
-    status: "Rejected",
-    justification: "Want to see all research projects for general knowledge.",
-    reviewedBy: "Lisa Anderson (Manager)",
-    reviewDate: "2026-05-21",
-    reviewComments: "Request denied - 'general knowledge' is not a sufficient justification for accessing confidential research data. Access to research projects is restricted to team members directly involved in those projects. If you have a specific project-related need, please submit a new request with detailed justification.",
-  },
-];
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -181,7 +75,7 @@ export function RequestHistory() {
   const filteredRequests = requests.filter((request) => {
     const matchesSearch =
       request.id.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.folderName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.folderPath.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.employeeName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "All" || request.status === statusFilter;
     return matchesSearch && matchesStatus;
@@ -278,7 +172,7 @@ export function RequestHistory() {
                     {request.id}
                   </TableCell>
                   <TableCell>{request.employeeName}</TableCell>
-                  <TableCell>{request.folderName}</TableCell>
+                  <TableCell>{request.folderPath}</TableCell>
                   <TableCell>{new Date(request.createdAt).toDateString()}</TableCell>
                   <TableCell>
                     <Chip
@@ -345,9 +239,6 @@ export function RequestHistory() {
                         <Typography variant="body1" fontWeight={500}>
                           {selectedRequest.employeeName}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {selectedRequest.employeeEmail}
-                        </Typography>
                       </Box>
                     </Box>
                   </Grid>
@@ -374,7 +265,7 @@ export function RequestHistory() {
                           Shared Folder
                         </Typography>
                         <Typography variant="body1" fontWeight={500}>
-                          {selectedRequest.folderName}
+                          {selectedRequest.folderPath}
                         </Typography>
                       </Box>
                     </Box>
@@ -388,7 +279,7 @@ export function RequestHistory() {
                           Department
                         </Typography>
                         <Typography variant="body1" fontWeight={500}>
-                          {selectedRequest.employee.department}
+                          {selectedRequest.employeeDepartment}
                         </Typography>
                       </Box>
                     </Box>

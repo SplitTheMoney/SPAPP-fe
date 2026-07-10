@@ -195,10 +195,10 @@ export function ApprovalScreen() {
                     {request.id}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {request.employee.name}
+                    {request.employeeName}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {request.folder.name}
+                    {request.folderPath}
                   </Typography>
                 </Box>
               ))}
@@ -237,10 +237,10 @@ export function ApprovalScreen() {
                       Requester
                     </Typography>
                     <Typography variant="body1" fontWeight={500}>
-                      {selectedRequest!.employee.name}
+                      {selectedRequest!.employeeName}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {selectedRequest!.employee.email}
+                      {selectedRequest!.employeeDepartment}
                     </Typography>
                   </Box>
                 </Box>
@@ -268,7 +268,7 @@ export function ApprovalScreen() {
                       Shared Folder
                     </Typography>
                     <Typography variant="body1" fontWeight={500}>
-                      {selectedRequest!.folder.path}
+                      {selectedRequest!.folderPath}
                     </Typography>
                   </Box>
                 </Box>
@@ -282,7 +282,7 @@ export function ApprovalScreen() {
                       Department
                     </Typography>
                     <Typography variant="body1" fontWeight={500}>
-                      {selectedRequest!.employee.department}
+                      {selectedRequest!.employeeDepartment}
                     </Typography>
                   </Box>
                 </Box>

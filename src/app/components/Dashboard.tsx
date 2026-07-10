@@ -197,7 +197,7 @@ export function Dashboard() {
                     {request.id}
                   </TableCell>
                   <TableCell>{request.employeeName}</TableCell>
-                  <TableCell>{request.folderName}</TableCell>
+                  <TableCell>{request.folderPath}</TableCell>
                   <TableCell>{new Date(request.createdAt).toDateString()}</TableCell>
                   <TableCell>
                     <Chip
