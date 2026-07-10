@@ -360,7 +360,7 @@ export function RequestHistory() {
                           Request Date
                         </Typography>
                         <Typography variant="body1" fontWeight={500}>
-                          {selectedRequest.createdAt}
+                          {new Date(selectedRequest.createdAt).toLocaleDateString()}
                         </Typography>
                       </Box>
                     </Box>
@@ -388,7 +388,7 @@ export function RequestHistory() {
                           Department
                         </Typography>
                         <Typography variant="body1" fontWeight={500}>
-                          {selectedRequest.department}
+                          {selectedRequest.employee.department}
                         </Typography>
                       </Box>
                     </Box>

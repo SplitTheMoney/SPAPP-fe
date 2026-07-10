@@ -15,3 +15,24 @@ export const createRequest = async(data: CreateRequestRequestDTO) : Promise<Acce
     const response = await api.post("/requests", data);
     return response.data;
 }
+
+export const getPendingRequests = async (): Promise<AccessRequest[]> => {
+    const response = await api.get("/requests/pending");
+    return response.data;
+}
+
+
+export const acceptRequest = async(
+    requestId: number,
+) : Promise<number> => {
+    const response = await api.put("/requests/" + requestId + "/accept");
+    return response.status;
+}
+
+export const rejectRequest = async(
+    requestId: number,
+    reason: string
+) : Promise<number> => {
+    const response = await api.put("/requests/" + requestId + "/reject", { reason });
+    return response.status;
+}

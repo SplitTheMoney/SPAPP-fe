@@ -11,6 +11,13 @@ export type LoginResponseDTO = {
   role: string;
 };
 
+export type User = {
+  name: string,
+  email: string,
+  department: string,
+  role: "EMPLOYEE" | "MANAGER" | "ADMIN"
+}
+
 export type AccessRequest = {
   id: number,
   employeeId: number,

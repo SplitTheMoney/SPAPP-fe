@@ -13,17 +13,6 @@ import { getAllFolders } from "../service/sharedFolderService";
 import { SharedFolder } from "../types/types";
 import { createRequest } from "../service/accessRequestService";
 
-/*const sharedFolders = [
-  "Finance/Q4-Reports",
-  "HR/Employee-Records",
-  "IT/Server-Configs",
-  "Marketing/Campaigns",
-  "Sales/Q2-Data",
-  "Legal/Contracts",
-  "Operations/Procedures",
-  "Research/Projects",
-];*/
-
 export function CreateRequest() {
   const [sharedFolders, setSharedFolders] = useState<SharedFolder[]>([]);
   const [folderId, setFolderId] = useState<number>(-1);
