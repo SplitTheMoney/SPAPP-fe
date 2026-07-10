@@ -24,15 +24,16 @@ export const getPendingRequests = async (): Promise<AccessRequest[]> => {
 
 export const acceptRequest = async(
     requestId: number,
+    expirationDate: string
 ) : Promise<number> => {
-    const response = await api.put("/requests/" + requestId + "/accept");
-    return response.status;
+    const response = await api.put(`/requests/${requestId}/approve`, { expirationDate });
+    return response.data;
 }
 
 export const rejectRequest = async(
     requestId: number,
     reason: string
 ) : Promise<number> => {
-    const response = await api.put("/requests/" + requestId + "/reject", { reason });
-    return response.status;
+    const response = await api.put(`/requests/${requestId}/reject`, { rejectionReason: reason });
+    return response.data;
 }
