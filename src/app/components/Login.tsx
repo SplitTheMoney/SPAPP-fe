@@ -16,11 +16,11 @@ export function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    login(email, password).then((result) =>{
-      if(result){
-        console.log("RESULT---->", result.email, result.password)
+    login({ email, password }).then((result) => {
+      if (result) {
+        console.log("RESULT---->", result);
         navigate("/dashboard");
       }
     })

@@ -1,7 +1,7 @@
-import { AccessRequest } from "../types/types";
+import { AccessRequest, AccessRequestResponseDTO, CreateRequestRequestDTO } from "../types/types";
 import api from "./api/axios";
 
-export const getAccessRequests = async (): Promise<AccessRequest[]> => {
+export const getAccessRequests = async (): Promise<AccessRequestResponseDTO[]> => {
   const response = await api.get("/requests");
   return response.data;
 };
@@ -11,18 +11,16 @@ export const getManagerRequests = async (): Promise<AccessRequest[]> => {
   return response.data;
 };
 
+export const createRequest = async(data: CreateRequestRequestDTO) : Promise<AccessRequestResponseDTO> => {
+    const response = await api.post("/requests", data);
+    return response.data;
+}
+
 export const getPendingRequests = async (): Promise<AccessRequest[]> => {
     const response = await api.get("/requests/pending");
     return response.data;
 }
 
-export const createRequest = async(
-    folderId: number,
-    justification: string
-) : Promise<number> => {
-    const response = await api.post("/requests/create", {folderId, justification});
-    return response.status;
-}
 
 export const acceptRequest = async(
     requestId: number,

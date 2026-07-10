@@ -1,10 +1,14 @@
-export type LoginRequest = {
+export type LoginRequestDTO = {
   email: string;
   password: string;
 };
 
-export type LoginResponse = {
+export type LoginResponseDTO = {
   token: string;
+  id: number; 
+  name: string;
+  email: string;
+  role: string;
 };
 
 export type User = {
@@ -15,20 +19,49 @@ export type User = {
 }
 
 export type AccessRequest = {
-  id: number;
-  employee: User;
-  manager: User;
-  folder: SharedFolder;
-  createdAt: string;
-  status: "CREATED" | "APPROVED" | "REJECTED";
-  justification: string;
-  decisionDate: string;
-  rejectionReason: string;
-};
+  id: number,
+  employeeId: number,
+  employeeName: string,
+  managerId: number,
+  managerName: string,
+  folderId: number,
+  folderName: string,
+  justification: string,
+  accessType: "READ" | "WRITE",
+  status: "CREATED" | "REJECTED" | "APPROVED",
+  rejectionReason?: string,
+  expirationDate?: string,
+  createdAt: string,
+  decisionDate?: string
+}
 
 export type SharedFolder = {
   id: number;
   name: string;
   path: string;
   description: string;
+}
+
+
+export type CreateRequestRequestDTO = {
+  folderId: number,
+  justification: string,
+  accessType: "READ" | "WRITE"
+}
+
+export type AccessRequestResponseDTO = {
+  id: number,
+  employeeId: number,
+  employeeName: string,
+  managerId: number,
+  managerName: string,
+  folderId: number,
+  folderName: string,
+  justification: string,
+  accessType: "READ" | "WRITE",
+  status: "CREATED" | "REJECTED" | "APPROVED",
+  rejectionReason?: string,
+  expirationDate?: string,
+  createdAt: string,
+  decisionDate?: string
 }

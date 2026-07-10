@@ -24,7 +24,7 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { Search, FilterList, Visibility, Person, Folder, CalendarToday, Description, CheckCircle, Cancel } from "@mui/icons-material";
+import { Search, FilterList, Visibility, Person, Folder, CalendarToday, Description, CheckCircle, Cancel, EditDocument } from "@mui/icons-material";
 import { getAccessRequests } from "../service/accessRequestService";
 import { AccessRequest } from "../types/types";
 
@@ -137,11 +137,11 @@ const allRequests = [
 
 const getStatusColor = (status: string) => {
   switch (status) {
-    case "Pending":
+    case "CREATED":
       return "warning";
-    case "Approved":
+    case "APPROVED":
       return "success";
-    case "Rejected":
+    case "REJECTED":
       return "error";
     default:
       return "default";
@@ -178,16 +178,16 @@ export function RequestHistory() {
     return <p>Loading...</p>;
   }
 
-  const filteredRequests = allRequests.filter((request) => {
+  const filteredRequests = requests.filter((request) => {
     const matchesSearch =
-      request.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.folder.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.user.toLowerCase().includes(searchTerm.toLowerCase());
+      request.id.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.folderName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.employeeName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "All" || request.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  const handleViewDetails = (request: any) => {
+  const handleViewDetails = (request: AccessRequest) => {
     setSelectedRequest(request);
     setOpenDialog(true);
   };
@@ -240,9 +240,9 @@ export function RequestHistory() {
               }}
             >
               <MenuItem value="All">All Status</MenuItem>
-              <MenuItem value="Pending">Pending</MenuItem>
-              <MenuItem value="Approved">Approved</MenuItem>
-              <MenuItem value="Rejected">Rejected</MenuItem>
+              <MenuItem value="CREATED">Pending</MenuItem>
+              <MenuItem value="APPROVED">Approved</MenuItem>
+              <MenuItem value="REJECTED">Rejected</MenuItem>
             </TextField>
           </Grid>
         </Grid>
@@ -267,7 +267,7 @@ export function RequestHistory() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {requests.map((request) => (
+              {filteredRequests.map((request) => (
                 <TableRow
                   key={request.id}
                   sx={{
@@ -277,9 +277,9 @@ export function RequestHistory() {
                   <TableCell sx={{ fontWeight: 500, color: "#1976d2" }}>
                     {request.id}
                   </TableCell>
-                  <TableCell>{request.employee.name}</TableCell>
-                  <TableCell>{request.folder.path}</TableCell>
-                  <TableCell>{new Date(request.createdAt).toLocaleDateString()}</TableCell>
+                  <TableCell>{request.employeeName}</TableCell>
+                  <TableCell>{request.folderName}</TableCell>
+                  <TableCell>{new Date(request.createdAt).toDateString()}</TableCell>
                   <TableCell>
                     <Chip
                       label={request.status}
@@ -343,10 +343,10 @@ export function RequestHistory() {
                           Requester
                         </Typography>
                         <Typography variant="body1" fontWeight={500}>
-                          {selectedRequest.employee.name}
+                          {selectedRequest.employeeName}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {selectedRequest.employee.email}
+                          {selectedRequest.employeeEmail}
                         </Typography>
                       </Box>
                     </Box>
@@ -374,7 +374,7 @@ export function RequestHistory() {
                           Shared Folder
                         </Typography>
                         <Typography variant="body1" fontWeight={500}>
-                          {selectedRequest.folder.path}
+                          {selectedRequest.folderName}
                         </Typography>
                       </Box>
                     </Box>
@@ -389,6 +389,20 @@ export function RequestHistory() {
                         </Typography>
                         <Typography variant="body1" fontWeight={500}>
                           {selectedRequest.employee.department}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+                      <EditDocument color="action" />
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          Access
+                        </Typography>
+                        <Typography variant="body1" fontWeight={500}>
+                          {selectedRequest.accessType === "READ" ? "Read" : "Write"}
                         </Typography>
                       </Box>
                     </Box>
@@ -434,7 +448,7 @@ export function RequestHistory() {
                             Reviewed By
                           </Typography>
                           <Typography variant="body1" fontWeight={500}>
-                            {selectedRequest.manager.name}
+                            {selectedRequest.managerName}
                           </Typography>
                         </Grid>
                         <Grid item xs={12} sm={6}>
@@ -442,7 +456,7 @@ export function RequestHistory() {
                             Review Date
                           </Typography>
                           <Typography variant="body1" fontWeight={500}>
-                            {new Date(selectedRequest.decisionDate).toLocaleDateString()}
+                            {selectedRequest.decisionDate ? new Date(selectedRequest.decisionDate).toDateString() : "N/A"}
                           </Typography>
                         </Grid>
                       </Grid>

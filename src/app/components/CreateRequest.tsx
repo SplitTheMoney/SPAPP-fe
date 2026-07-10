@@ -15,34 +15,46 @@ import { createRequest } from "../service/accessRequestService";
 
 export function CreateRequest() {
   const [sharedFolders, setSharedFolders] = useState<SharedFolder[]>([]);
-  const [folder, setFolder] = useState(-1);
-  const [justification, setJustification] = useState("");
+  const [folderId, setFolderId] = useState<number>(-1);
+  const [accessType, setAccessType] = useState<"READ"|"WRITE">("READ");
+  const [justification, setJustification] = useState<string>("");
   const [submitted, setSubmitted] = useState(0);
+  const [error, setError] = useState<string>("");
+  const [disableButton, setDisableButton] = useState(false);
 
   useEffect(() => {
     const loadFolders = async () => {
       try {
         const folders = await getAllFolders();
         setSharedFolders(folders);
-      } catch (error) {
-        console.error("Failed to load folders", error);
+      } catch (err: any) {
+        console.error("Failed to load folders", err.response?.data?.message);
       }
     }
 
     loadFolders();
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
-    createRequest(folder, justification).then((result) => {
-      setFolder(-1);
+    try {
+      setDisableButton(true);
+      let request = await createRequest({folderId, accessType, justification})
+      setFolderId(-1);
       setJustification("");
-      if (result === 200) setSubmitted(1);
-      else setSubmitted(2);
+      setSubmitted(1);
+
+    } catch (error: any) {
+      console.error(error.response?.data?.message);
+      setError(error.response?.data?.message)
+      setSubmitted(2);
+
+    } finally {
+      setDisableButton(false);
       setTimeout(() =>{
         setSubmitted(0);
       }, 3000);
-    })
+    }
   };
 
   return (
@@ -65,7 +77,7 @@ export function CreateRequest() {
 
         {submitted === 2 && (
           <Alert severity="error" sx={{ mb: 3 }}>
-            Failed to submit the access request. Please try again later.
+            {error}
           </Alert>
         )}
 
@@ -78,8 +90,8 @@ export function CreateRequest() {
               <TextField
                 select
                 fullWidth
-                value={folder}
-                onChange={(e) => setFolder(Number(e.target.value))}
+                value={folderId}
+                onChange={(e) => setFolderId(Number(e.target.value))}
                 required
                 placeholder="Select a folder"
               >
@@ -88,6 +100,27 @@ export function CreateRequest() {
                     {folder.path}
                   </MenuItem>
                 ))}
+              </TextField>
+            </Box>
+
+            <Box>
+              <Typography variant="subtitle2" gutterBottom fontWeight={600}>
+                Access type
+              </Typography>
+              <TextField
+                select
+                fullWidth
+                value={accessType}
+                onChange={(e) => setAccessType(e.target.value as "READ" | "WRITE")}
+                required
+                placeholder="Access"
+              >
+                <MenuItem key="READ" value="READ">
+                  Read
+                </MenuItem>
+                <MenuItem key="WRITE" value="WRITE">
+                  Write
+                </MenuItem>
               </TextField>
             </Box>
 
@@ -112,8 +145,9 @@ export function CreateRequest() {
               size="large"
               startIcon={<Send />}
               sx={{ alignSelf: "flex-start", px: 4 }}
+              disabled={disableButton}
             >
-              Submit Request
+              {disableButton ? "Submitting..." : "Submit Request"}
             </Button>
           </Box>
         </form>
