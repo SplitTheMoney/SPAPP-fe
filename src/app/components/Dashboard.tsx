@@ -22,6 +22,7 @@ import { useEffect, useState } from "react";
 import { AccessRequest } from "../types/types";
 
 
+
 const getStatusColor = (status: string) => {
   switch (status) {
     case "CREATED":
@@ -38,6 +39,8 @@ const getStatusColor = (status: string) => {
 export function Dashboard() {
   const [requests, setRequests] = useState<AccessRequest[]>([]);
   const [loading, setLoading] = useState(true);
+
+
 
   const pendingRequests = requests.filter(
     (r) => r.status === "CREATED"
