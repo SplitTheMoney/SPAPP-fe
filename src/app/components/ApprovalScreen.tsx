@@ -13,42 +13,10 @@ import {
   useTheme,
   CircularProgress,
 } from "@mui/material";
-import { CheckCircle, Cancel, Person, Folder, CalendarToday, Description } from "@mui/icons-material";
+import { CheckCircle, Cancel, Person, Folder, CalendarToday, Description, EditDocument, Edit, Visibility } from "@mui/icons-material";
 import { AccessRequest } from "../types/types";
 import { acceptRequest, getPendingRequests, rejectRequest } from "../service/accessRequestService";
 
-/*const pendingRequests = [
-  {
-    id: "REQ-2024-001",
-    user: "John Smith",
-    email: "john.smith@company.com",
-    department: "Finance",
-    folder: "Finance/Q4-Reports",
-    date: "2026-05-28",
-    justification:
-      "I need access to Q4 financial reports to prepare the annual budget presentation for the board meeting next week. This data is essential for accurate forecasting and strategic planning.",
-  },
-  {
-    id: "REQ-2024-003",
-    user: "Mike Davis",
-    email: "mike.davis@company.com",
-    department: "IT",
-    folder: "IT/Server-Configs",
-    date: "2026-05-26",
-    justification:
-      "Requesting read access to review server configuration files as part of the security audit. This is required to ensure compliance with our security policies and identify potential vulnerabilities.",
-  },
-  {
-    id: "REQ-2024-007",
-    user: "Lisa Anderson",
-    email: "lisa.anderson@company.com",
-    department: "Operations",
-    folder: "Operations/Procedures",
-    date: "2026-05-22",
-    justification:
-      "I need write access to update standard operating procedures based on recent process improvements. These updates are critical for maintaining documentation accuracy and operational efficiency.",
-  },
-];*/
 
 export function ApprovalScreen() {
   const theme = useTheme();
@@ -56,26 +24,29 @@ export function ApprovalScreen() {
   const [pendingRequests, setPendingRequests] = useState<AccessRequest[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<AccessRequest | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [expirationDate, setExpirationDate] = useState<string>(new Date().toISOString().split("T")[0]);
   const [actionTaken, setActionTaken] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(!isMobile);
 
   useEffect(() => {
     const loadRequests = async () => {
-        try {
-          const requests = await getPendingRequests();
-          setPendingRequests(requests);
-          setSelectedRequest(requests[0]);
-        } catch (error) {
-          console.error("Failed to load pending requests", error);
-        }
+      try {
+        const requests = await getPendingRequests();
+        setPendingRequests(requests);
+        setSelectedRequest(requests[0]);
+      } catch (error) {
+        console.error("Failed to load pending requests", error);
       }
-  
-      loadRequests();
+    }
+
+    loadRequests();
   }, []);
 
-  const handleApprove = () => {
-    acceptRequest(selectedRequest!.id).then((result) => {
-      if (result === 200) {
+  const handleApprove = async () => {
+    if (expirationDate) {
+      try {
+        await acceptRequest(selectedRequest!.id, expirationDate)
+
         setActionTaken("approved");
         const updatedRequests = pendingRequests.filter(
           request => request.id !== selectedRequest!.id
@@ -84,27 +55,34 @@ export function ApprovalScreen() {
         setPendingRequests(updatedRequests);
         setSelectedRequest(updatedRequests.length > 0 ? updatedRequests[0] : null);
         setTimeout(() => setActionTaken(null), 3000);
+
+      } catch (error) {
+        setActionTaken("error");
+        console.error("Failed to approve request", error);
       }
-    })
-  };
-
-  const handleReject = () => {
+    };
+  }
+  const handleReject = async () => {
     if (rejectionReason.trim()) {
-      rejectRequest(selectedRequest!.id, rejectionReason).then((result) => {
-        if (result === 200) {
-          setActionTaken("rejected");
-          const updatedRequests = pendingRequests.filter(
-            request => request.id !== selectedRequest!.id
-          );
+      try {
+        await rejectRequest(selectedRequest!.id, rejectionReason);
 
-          setPendingRequests(updatedRequests);
-          setSelectedRequest(updatedRequests.length > 0 ? updatedRequests[0] : null);
-          setTimeout(() => {
-            setActionTaken(null);
-            setRejectionReason("");
-          }, 3000);
-        }
-      })
+        setActionTaken("rejected");
+        const updatedRequests = pendingRequests.filter(
+          request => request.id !== selectedRequest!.id
+        );
+
+        setPendingRequests(updatedRequests);
+        setSelectedRequest(updatedRequests.length > 0 ? updatedRequests[0] : null);
+        setTimeout(() => {
+          setActionTaken(null);
+          setRejectionReason("");
+        }, 3000);
+
+      } catch (error) {
+        setActionTaken("error");
+        console.error("Failed to reject request", error);
+      }
     }
   };
 
@@ -191,18 +169,26 @@ export function ApprovalScreen() {
                     },
                   }}
                 >
-                  <Typography variant="subtitle2" fontWeight={600} color="primary">
-                    {request.id}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {request.employeeName}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {request.folderPath}
-                  </Typography>
+                  <Box>
+                    <Typography variant="subtitle2" fontWeight={600} color="primary">
+                      {request.id}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {request.employeeName}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {request.folderPath}
+                    </Typography>
+                    {request.accessType === "READ" ? (
+                      <Visibility color="action" fontSize="small" />
+                    ) : (
+                      <Edit color="action" fontSize="small" />
+                    )}
+                  </Box>
                 </Box>
               ))}
             </Box>
+
           </Paper>
         </Grid>
 
@@ -287,6 +273,20 @@ export function ApprovalScreen() {
                   </Box>
                 </Box>
               </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <Box sx={{ display: "flex", gap: 1, alignItems: "center", mb: 2 }}>
+                  <EditDocument color="action" />
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      Access
+                    </Typography>
+                    <Typography variant="body1" fontWeight={500}>
+                      {selectedRequest.accessType === "READ" ? "Read" : "Write"}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Grid>
             </Grid>
 
             <Divider sx={{ my: 3 }} />
@@ -304,7 +304,21 @@ export function ApprovalScreen() {
 
             <Box sx={{ mb: 3 }}>
               <Typography variant="subtitle2" gutterBottom fontWeight={600}>
-                Rejection Reason (Optional)
+                Expiration Date (Approve)
+              </Typography>
+              <TextField
+                type="date"
+                label="Data de Expiração"
+                value={expirationDate}
+                onChange={(e) =>
+                  setExpirationDate(
+                    e.target.value
+                  )
+                }
+                fullWidth
+              />
+              <Typography variant="subtitle2" gutterBottom fontWeight={600}>
+                Rejection Reason (Reject)
               </Typography>
               <TextField
                 fullWidth
@@ -343,7 +357,7 @@ export function ApprovalScreen() {
             </Box>
           </Paper>
         </Grid>
-      </Grid>
-    </Box>
+      </Grid >
+    </Box >
   );
 }
