@@ -42,9 +42,10 @@ export function ApprovalScreen() {
     loadRequests();
   }, []);
 
-  const handleApprove = () => {
+  const handleApprove = async () => {
     if (expirationDate) {
-      acceptRequest(selectedRequest!.id, expirationDate).then((result) => {
+      try {
+        await acceptRequest(selectedRequest!.id, expirationDate)
 
         setActionTaken("approved");
         const updatedRequests = pendingRequests.filter(
@@ -55,12 +56,16 @@ export function ApprovalScreen() {
         setSelectedRequest(updatedRequests.length > 0 ? updatedRequests[0] : null);
         setTimeout(() => setActionTaken(null), 3000);
 
-      })
+      } catch (error) {
+        setActionTaken("error");
+        console.error("Failed to approve request", error);
+      }
     };
   }
-  const handleReject = () => {
+  const handleReject = async () => {
     if (rejectionReason.trim()) {
-      rejectRequest(selectedRequest!.id, rejectionReason).then((result) => {
+      try {
+        await rejectRequest(selectedRequest!.id, rejectionReason);
 
         setActionTaken("rejected");
         const updatedRequests = pendingRequests.filter(
@@ -74,7 +79,10 @@ export function ApprovalScreen() {
           setRejectionReason("");
         }, 3000);
 
-      })
+      } catch (error) {
+        setActionTaken("error");
+        console.error("Failed to reject request", error);
+      }
     }
   };
 
