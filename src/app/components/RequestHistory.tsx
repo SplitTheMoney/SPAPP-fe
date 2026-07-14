@@ -351,16 +351,30 @@ export function RequestHistory() {
                           </Typography>
                         </Grid>
                       </Grid>
+                      
 
-                      {selectedRequest.rejectionReason && (
-                        <Box sx={{ mt: 2 }}>
+                      {selectedRequest.status === "APPROVED" ? (
+                        selectedRequest.expirationDate && (
+                          <Box sx={{ mt: 2 }}>
+                            <Typography variant="caption" color="text.secondary">
+                              Expiration Date
+                            </Typography>
+                            <Typography variant="body1" fontWeight={500}>
+                              {new Date(selectedRequest.expirationDate).toDateString()}
+                            </Typography>
+                          </Box>
+                        )
+                      ):(
+                        selectedRequest.rejectionReason && (
+                          <Box sx={{ mt: 2 }}>
                           <Typography variant="caption" color="text.secondary">
-                            {selectedRequest.status === "APPROVED" ? "Comments" : "Rejection Reason"}
+                          Rejection Reason
                           </Typography>
                           <Typography variant="body2" sx={{ mt: 0.5 }}>
-                            {selectedRequest.rejectionReason}
+                          {selectedRequest.rejectionReason}
                           </Typography>
-                        </Box>
+                          </Box>
+                        )
                       )}
                     </Box>
                   </>

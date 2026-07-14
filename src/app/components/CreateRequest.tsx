@@ -12,6 +12,7 @@ import { Send } from "@mui/icons-material";
 import { getAllFolders } from "../service/sharedFolderService";
 import { SharedFolder } from "../types/types";
 import { createRequest } from "../service/accessRequestService";
+import { useSnackbar } from "notistack";
 
 export function CreateRequest() {
   const [sharedFolders, setSharedFolders] = useState<SharedFolder[]>([]);
@@ -21,6 +22,7 @@ export function CreateRequest() {
   const [submitted, setSubmitted] = useState(0);
   const [error, setError] = useState<string>("");
   const [disableButton, setDisableButton] = useState(false);
+    const {enqueueSnackbar} = useSnackbar();
 
   useEffect(() => {
     const loadFolders = async () => {
@@ -43,9 +45,10 @@ export function CreateRequest() {
       setFolderId(-1);
       setJustification("");
       setSubmitted(1);
+      enqueueSnackbar("Access request submitted successfully!", { variant: "success" });
 
     } catch (error: any) {
-      console.error(error.response?.data?.message);
+     enqueueSnackbar(error.response?.data?.message || "An error occurred while submitting the request.", { variant: "error" });
       setError(error.response?.data?.message)
       setSubmitted(2);
 
