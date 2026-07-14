@@ -31,6 +31,8 @@ const departments = ["FINANCE", "HR", "IT", "MARKETING", "OPERATIONS", "SALES", 
 export function UserManagement() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const userRole = localStorage.getItem("role");
+  const canAddUser = userRole === "ADMIN";
   const [users, setUsers] = useState<User[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -129,15 +131,17 @@ export function UserManagement() {
         >
           User Management
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={() => handleOpenDialog()}
-          size="large"
-          fullWidth={isMobile}
-        >
-          Add User
-        </Button>
+        {canAddUser && (
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => handleOpenDialog()}
+            size="large"
+            fullWidth={isMobile}
+          >
+            Add User
+          </Button>
+        )}
       </Box>
 
       <Paper sx={{ borderRadius: 2, overflow: "hidden" }}>
