@@ -12,10 +12,11 @@ export type LoginResponseDTO = {
 };
 
 export type User = {
+  id: number,
   name: string,
   email: string,
-  department: string,
-  role: "EMPLOYEE" | "MANAGER" | "ADMIN"
+  department: "FINANCE" | "HR" | "IT" | "MARKETING" | "OPERATIONS" | "SALES" | "LEGAL",
+  role: "EMPLOYEE" | "MANAGER" | "ADMIN",
 }
 
 export type AccessRequest = {
@@ -66,4 +67,12 @@ export type AccessRequestResponseDTO = {
   expirationDate?: string,
   createdAt: string,
   decisionDate?: string
+}
+
+export type CreateUserDTO = {
+  name: string,
+  email: string,
+  password: string,
+  department: string,
+  role: string
 }
