@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Paper,
@@ -9,31 +9,55 @@ import {
   Alert,
 } from "@mui/material";
 import { Send } from "@mui/icons-material";
-
-const sharedFolders = [
-  "Finance/Q4-Reports",
-  "HR/Employee-Records",
-  "IT/Server-Configs",
-  "Marketing/Campaigns",
-  "Sales/Q2-Data",
-  "Legal/Contracts",
-  "Operations/Procedures",
-  "Research/Projects",
-];
+import { getAllFolders } from "../service/sharedFolderService";
+import { SharedFolder } from "../types/types";
+import { createRequest } from "../service/accessRequestService";
+import { useSnackbar } from "notistack";
 
 export function CreateRequest() {
-  const [folder, setFolder] = useState("");
-  const [justification, setJustification] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [sharedFolders, setSharedFolders] = useState<SharedFolder[]>([]);
+  const [folderId, setFolderId] = useState<number>(-1);
+  const [accessType, setAccessType] = useState<"READ"|"WRITE">("READ");
+  const [justification, setJustification] = useState<string>("");
+  const [submitted, setSubmitted] = useState(0);
+  const [error, setError] = useState<string>("");
+  const [disableButton, setDisableButton] = useState(false);
+    const {enqueueSnackbar} = useSnackbar();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    const loadFolders = async () => {
+      try {
+        const folders = await getAllFolders();
+        setSharedFolders(folders);
+      } catch (err: any) {
+        console.error("Failed to load folders", err.response?.data?.message);
+      }
+    }
+
+    loadFolders();
+  }, []);
+
+  const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => {
-      setFolder("");
+    try {
+      setDisableButton(true);
+      let request = await createRequest({folderId, accessType, justification})
+      setFolderId(-1);
       setJustification("");
-      setSubmitted(false);
-    }, 3000);
+      setSubmitted(1);
+      enqueueSnackbar("Access request submitted successfully!", { variant: "success" });
+
+    } catch (error: any) {
+     enqueueSnackbar(error.response?.data?.message || "An error occurred while submitting the request.", { variant: "error" });
+      setError(error.response?.data?.message)
+      setSubmitted(2);
+
+    } finally {
+      setDisableButton(false);
+      setTimeout(() =>{
+        setSubmitted(0);
+      }, 3000);
+    }
   };
 
   return (
@@ -48,9 +72,15 @@ export function CreateRequest() {
       </Typography>
 
       <Paper sx={{ p: { xs: 2, sm: 3, md: 4 }, maxWidth: 800, borderRadius: 2 }}>
-        {submitted && (
+        {submitted === 1 && (
           <Alert severity="success" sx={{ mb: 3 }}>
             Access request submitted successfully! You will be notified once it's reviewed.
+          </Alert>
+        )}
+
+        {submitted === 2 && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
           </Alert>
         )}
 
@@ -63,16 +93,37 @@ export function CreateRequest() {
               <TextField
                 select
                 fullWidth
-                value={folder}
-                onChange={(e) => setFolder(e.target.value)}
+                value={folderId}
+                onChange={(e) => setFolderId(Number(e.target.value))}
                 required
                 placeholder="Select a folder"
               >
-                {sharedFolders.map((option) => (
-                  <MenuItem key={option} value={option}>
-                    {option}
+                {sharedFolders.map((folder) => (
+                  <MenuItem key={folder.id} value={folder.id}>
+                    {folder.path}
                   </MenuItem>
                 ))}
+              </TextField>
+            </Box>
+
+            <Box>
+              <Typography variant="subtitle2" gutterBottom fontWeight={600}>
+                Access type
+              </Typography>
+              <TextField
+                select
+                fullWidth
+                value={accessType}
+                onChange={(e) => setAccessType(e.target.value as "READ" | "WRITE")}
+                required
+                placeholder="Access"
+              >
+                <MenuItem key="READ" value="READ">
+                  Read
+                </MenuItem>
+                <MenuItem key="WRITE" value="WRITE">
+                  Write
+                </MenuItem>
               </TextField>
             </Box>
 
@@ -97,8 +148,9 @@ export function CreateRequest() {
               size="large"
               startIcon={<Send />}
               sx={{ alignSelf: "flex-start", px: 4 }}
+              disabled={disableButton}
             >
-              Submit Request
+              {disableButton ? "Submitting..." : "Submit Request"}
             </Button>
           </Box>
         </form>

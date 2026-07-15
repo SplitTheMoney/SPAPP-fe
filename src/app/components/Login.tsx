@@ -9,15 +9,24 @@ import {
   Container
 } from "@mui/material";
 import { FolderShared } from "@mui/icons-material";
+import { login } from "../service/authService";
+import { useSnackbar } from "notistack";
 
 export function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const { enqueueSnackbar } = useSnackbar();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    navigate("/dashboard");
+    try {
+      await login({ email, password });
+      navigate("/dashboard");
+    } catch (error: any) {
+      enqueueSnackbar(error.response?.data?.message || "An error occurred while submitting the request.", { variant: "error" });
+      setPassword("");
+    }
   };
 
   return (

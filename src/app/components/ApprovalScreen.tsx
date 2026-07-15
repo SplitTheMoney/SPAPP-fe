@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Paper,
@@ -11,62 +11,81 @@ import {
   Alert,
   useMediaQuery,
   useTheme,
+  CircularProgress,
 } from "@mui/material";
-import { CheckCircle, Cancel, Person, Folder, CalendarToday, Description } from "@mui/icons-material";
+import { CheckCircle, Cancel, Person, Folder, CalendarToday, Description, EditDocument, Edit, Visibility } from "@mui/icons-material";
+import { AccessRequest } from "../types/types";
+import { acceptRequest, getPendingRequests, rejectRequest } from "../service/accessRequestService";
+import { enqueueSnackbar, useSnackbar } from "notistack";
 
-const pendingRequests = [
-  {
-    id: "REQ-2024-001",
-    user: "John Smith",
-    email: "john.smith@company.com",
-    department: "Finance",
-    folder: "Finance/Q4-Reports",
-    date: "2026-05-28",
-    justification:
-      "I need access to Q4 financial reports to prepare the annual budget presentation for the board meeting next week. This data is essential for accurate forecasting and strategic planning.",
-  },
-  {
-    id: "REQ-2024-003",
-    user: "Mike Davis",
-    email: "mike.davis@company.com",
-    department: "IT",
-    folder: "IT/Server-Configs",
-    date: "2026-05-26",
-    justification:
-      "Requesting read access to review server configuration files as part of the security audit. This is required to ensure compliance with our security policies and identify potential vulnerabilities.",
-  },
-  {
-    id: "REQ-2024-007",
-    user: "Lisa Anderson",
-    email: "lisa.anderson@company.com",
-    department: "Operations",
-    folder: "Operations/Procedures",
-    date: "2026-05-22",
-    justification:
-      "I need write access to update standard operating procedures based on recent process improvements. These updates are critical for maintaining documentation accuracy and operational efficiency.",
-  },
-];
 
 export function ApprovalScreen() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const [selectedRequest, setSelectedRequest] = useState(pendingRequests[0]);
+  const [pendingRequests, setPendingRequests] = useState<AccessRequest[]>([]);
+  const [selectedRequest, setSelectedRequest] = useState<AccessRequest | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
-  const [actionTaken, setActionTaken] = useState<string | null>(null);
+  const [expirationDate, setExpirationDate] = useState<string>(new Date().toISOString().split("T")[0]);
   const [showDetails, setShowDetails] = useState(!isMobile);
+  const {enqueueSnackbar} = useSnackbar();
 
-  const handleApprove = () => {
-    setActionTaken("approved");
-    setTimeout(() => setActionTaken(null), 3000);
-  };
+  useEffect(() => {
+    const loadRequests = async () => {
+      try {
+        const requests = await getPendingRequests();
+        setPendingRequests(requests);
+        setSelectedRequest(requests[0]);
+      } catch (error) {
+        console.error("Failed to load pending requests", error);
+        enqueueSnackbar("Failed to load pending requests", { variant: "error" });
+      }
+    }
 
-  const handleReject = () => {
+    loadRequests();
+  }, []);
+
+  const handleApprove = async () => {
+    if (expirationDate) {
+      try {
+        await acceptRequest(selectedRequest!.id, expirationDate)
+        enqueueSnackbar("Request approved successfully!", { variant: "success" });
+     
+        const updatedRequests = pendingRequests.filter(
+          request => request.id !== selectedRequest!.id
+        );
+
+        setPendingRequests(updatedRequests);
+        setSelectedRequest(updatedRequests.length > 0 ? updatedRequests[0] : null);
+
+
+      } catch (error: any) {
+     
+        enqueueSnackbar( "Failed to approve request: \n" + (error.response?.data?.message ?? "An error occurred"), { variant: "error" });
+        console.error("Failed to approve request", error);
+      }
+    };
+  }
+  const handleReject = async () => {
     if (rejectionReason.trim()) {
-      setActionTaken("rejected");
-      setTimeout(() => {
-        setActionTaken(null);
+      try {
+        await rejectRequest(selectedRequest!.id, rejectionReason);
+
+   
+        enqueueSnackbar("Request rejected successfully!", { variant: "success" });
+        const updatedRequests = pendingRequests.filter(
+          request => request.id !== selectedRequest!.id
+        );
+
+        setPendingRequests(updatedRequests);
+        setSelectedRequest(updatedRequests.length > 0 ? updatedRequests[0] : null);
         setRejectionReason("");
-      }, 3000);
+
+        
+      } catch (error: any) {
+  
+        enqueueSnackbar("Failed to reject request: \n" + (error.response?.data?.message ?? "An error occurred"), { variant: "error" });
+        console.error("Failed to reject request", error);
+      }
     }
   };
 
@@ -76,6 +95,37 @@ export function ApprovalScreen() {
       setShowDetails(true);
     }
   };
+
+  if (!selectedRequest) {
+    return (
+      <Box>
+        <Typography
+          variant="h4"
+          gutterBottom
+          fontWeight={600}
+          sx={{ mb: 3 }}
+        >
+          Approval Queue
+        </Typography>
+
+        <Paper
+          sx={{
+            p: 4,
+            textAlign: "center",
+            borderRadius: 2,
+          }}
+        >
+          <Typography variant="h5" gutterBottom>
+            No pending requests
+          </Typography>
+
+          <Typography color="text.secondary">
+            There are currently no access requests waiting for approval.
+          </Typography>
+        </Paper>
+      </Box>
+    );
+  }
 
   return (
     <Box>
@@ -88,14 +138,6 @@ export function ApprovalScreen() {
         Approval Queue
       </Typography>
 
-      {actionTaken && (
-        <Alert
-          severity={actionTaken === "approved" ? "success" : "error"}
-          sx={{ mb: 3 }}
-        >
-          Request {selectedRequest.id} has been {actionTaken}!
-        </Alert>
-      )}
 
       <Grid container spacing={{ xs: 2, sm: 3 }}>
         <Grid item xs={12} md={4} sx={{ display: { xs: showDetails ? "none" : "block", md: "block" } }}>
@@ -115,25 +157,33 @@ export function ApprovalScreen() {
                     borderBottom: "1px solid #e0e0e0",
                     cursor: "pointer",
                     backgroundColor:
-                      selectedRequest.id === request.id ? "#e3f2fd" : "white",
+                      selectedRequest!.id === request.id ? "#e3f2fd" : "white",
                     "&:hover": {
                       backgroundColor:
-                        selectedRequest.id === request.id ? "#e3f2fd" : "#f5f7fa",
+                        selectedRequest!.id === request.id ? "#e3f2fd" : "#f5f7fa",
                     },
                   }}
                 >
-                  <Typography variant="subtitle2" fontWeight={600} color="primary">
-                    {request.id}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {request.user}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {request.folder}
-                  </Typography>
+                  <Box>
+                    <Typography variant="subtitle2" fontWeight={600} color="primary">
+                      {request.id}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {request.employeeName}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {request.folderPath}
+                    </Typography>
+                    {request.accessType === "READ" ? (
+                      <Visibility color="action" fontSize="small" />
+                    ) : (
+                      <Edit color="action" fontSize="small" />
+                    )}
+                  </Box>
                 </Box>
               ))}
             </Box>
+
           </Paper>
         </Grid>
 
@@ -154,7 +204,7 @@ export function ApprovalScreen() {
               )}
             </Box>
             <Chip
-              label={selectedRequest.id}
+              label={selectedRequest!.id}
               color="primary"
               sx={{ mb: 3 }}
             />
@@ -168,10 +218,10 @@ export function ApprovalScreen() {
                       Requester
                     </Typography>
                     <Typography variant="body1" fontWeight={500}>
-                      {selectedRequest.user}
+                      {selectedRequest!.employeeName}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {selectedRequest.email}
+                      {selectedRequest!.employeeDepartment}
                     </Typography>
                   </Box>
                 </Box>
@@ -185,7 +235,7 @@ export function ApprovalScreen() {
                       Request Date
                     </Typography>
                     <Typography variant="body1" fontWeight={500}>
-                      {selectedRequest.date}
+                      {new Date(selectedRequest!.createdAt).toLocaleDateString()}
                     </Typography>
                   </Box>
                 </Box>
@@ -199,7 +249,7 @@ export function ApprovalScreen() {
                       Shared Folder
                     </Typography>
                     <Typography variant="body1" fontWeight={500}>
-                      {selectedRequest.folder}
+                      {selectedRequest!.folderPath}
                     </Typography>
                   </Box>
                 </Box>
@@ -213,7 +263,21 @@ export function ApprovalScreen() {
                       Department
                     </Typography>
                     <Typography variant="body1" fontWeight={500}>
-                      {selectedRequest.department}
+                      {selectedRequest!.employeeDepartment}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <Box sx={{ display: "flex", gap: 1, alignItems: "center", mb: 2 }}>
+                  <EditDocument color="action" />
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      Access
+                    </Typography>
+                    <Typography variant="body1" fontWeight={500}>
+                      {selectedRequest.accessType === "READ" ? "Read" : "Write"}
                     </Typography>
                   </Box>
                 </Box>
@@ -227,7 +291,7 @@ export function ApprovalScreen() {
                 Justification
               </Typography>
               <Paper sx={{ p: 2, backgroundColor: "#f5f7fa" }}>
-                <Typography variant="body2">{selectedRequest.justification}</Typography>
+                <Typography variant="body2">{selectedRequest!.justification}</Typography>
               </Paper>
             </Box>
 
@@ -235,7 +299,21 @@ export function ApprovalScreen() {
 
             <Box sx={{ mb: 3 }}>
               <Typography variant="subtitle2" gutterBottom fontWeight={600}>
-                Rejection Reason (Optional)
+                Expiration Date (Approve)
+              </Typography>
+              <TextField
+                type="date"
+                label="Data de Expiração"
+                value={expirationDate}
+                onChange={(e) =>
+                  setExpirationDate(
+                    e.target.value
+                  )
+                }
+                fullWidth
+              />
+              <Typography variant="subtitle2" gutterBottom fontWeight={600}>
+                Rejection Reason (Reject)
               </Typography>
               <TextField
                 fullWidth
@@ -274,7 +352,7 @@ export function ApprovalScreen() {
             </Box>
           </Paper>
         </Grid>
-      </Grid>
-    </Box>
+      </Grid >
+    </Box >
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Paper,
@@ -23,123 +23,20 @@ import {
   Divider,
   useMediaQuery,
   useTheme,
+  Skeleton,
 } from "@mui/material";
-import { Search, FilterList, Visibility, Person, Folder, CalendarToday, Description, CheckCircle, Cancel } from "@mui/icons-material";
+import { Search, FilterList, Visibility, Person, Folder, CalendarToday, Description, CheckCircle, Cancel, EditDocument } from "@mui/icons-material";
+import { getAccessRequests } from "../service/accessRequestService";
+import { AccessRequest } from "../types/types";
 
-const allRequests = [
-  {
-    id: "REQ-2024-001",
-    user: "John Smith",
-    email: "john.smith@company.com",
-    department: "Finance",
-    folder: "Finance/Q4-Reports",
-    date: "2026-05-28",
-    status: "Pending",
-    justification: "I need access to Q4 financial reports to prepare the annual budget presentation for the board meeting next week. This data is essential for accurate forecasting and strategic planning.",
-    reviewedBy: null,
-    reviewDate: null,
-    reviewComments: null,
-  },
-  {
-    id: "REQ-2024-002",
-    user: "Sarah Johnson",
-    email: "sarah.johnson@company.com",
-    department: "HR",
-    folder: "HR/Employee-Records",
-    date: "2026-05-27",
-    status: "Approved",
-    justification: "As HR Manager, I require access to employee records for conducting performance reviews and managing personnel files.",
-    reviewedBy: "Robert Taylor (Administrator)",
-    reviewDate: "2026-05-27",
-    reviewComments: "Approved - valid business need and appropriate role.",
-  },
-  {
-    id: "REQ-2024-003",
-    user: "Mike Davis",
-    email: "mike.davis@company.com",
-    department: "IT",
-    folder: "IT/Server-Configs",
-    date: "2026-05-26",
-    status: "Pending",
-    justification: "Requesting read access to review server configuration files as part of the security audit. This is required to ensure compliance with our security policies and identify potential vulnerabilities.",
-    reviewedBy: null,
-    reviewDate: null,
-    reviewComments: null,
-  },
-  {
-    id: "REQ-2024-004",
-    user: "Emily Chen",
-    email: "emily.chen@company.com",
-    department: "Marketing",
-    folder: "Marketing/Campaigns",
-    date: "2026-05-25",
-    status: "Rejected",
-    justification: "Need access to view marketing campaign materials for a competitor analysis project.",
-    reviewedBy: "Lisa Anderson (Manager)",
-    reviewDate: "2026-05-25",
-    reviewComments: "Request denied - insufficient business justification. Competitor analysis does not require direct access to internal campaign files. Please work with the Marketing Manager who can provide the necessary information through proper channels.",
-  },
-  {
-    id: "REQ-2024-005",
-    user: "Robert Taylor",
-    email: "robert.taylor@company.com",
-    department: "Sales",
-    folder: "Sales/Q2-Data",
-    date: "2026-05-24",
-    status: "Approved",
-    justification: "Access needed to analyze Q2 sales performance and prepare reports for executive review.",
-    reviewedBy: "Robert Taylor (Administrator)",
-    reviewDate: "2026-05-24",
-    reviewComments: "Approved - legitimate business requirement.",
-  },
-  {
-    id: "REQ-2024-006",
-    user: "Lisa Anderson",
-    email: "lisa.anderson@company.com",
-    department: "Legal",
-    folder: "Legal/Contracts",
-    date: "2026-05-23",
-    status: "Approved",
-    justification: "Need access to review vendor contracts for the upcoming audit.",
-    reviewedBy: "Robert Taylor (Administrator)",
-    reviewDate: "2026-05-23",
-    reviewComments: "Approved - valid audit requirement.",
-  },
-  {
-    id: "REQ-2024-007",
-    user: "David Wilson",
-    email: "david.wilson@company.com",
-    department: "Operations",
-    folder: "Operations/Procedures",
-    date: "2026-05-22",
-    status: "Pending",
-    justification: "I need write access to update standard operating procedures based on recent process improvements. These updates are critical for maintaining documentation accuracy and operational efficiency.",
-    reviewedBy: null,
-    reviewDate: null,
-    reviewComments: null,
-  },
-  {
-    id: "REQ-2024-008",
-    user: "Jennifer Lee",
-    email: "jennifer.lee@company.com",
-    department: "Research",
-    folder: "Research/Projects",
-    date: "2026-05-21",
-    status: "Rejected",
-    justification: "Want to see all research projects for general knowledge.",
-    reviewedBy: "Lisa Anderson (Manager)",
-    reviewDate: "2026-05-21",
-    reviewComments: "Request denied - 'general knowledge' is not a sufficient justification for accessing confidential research data. Access to research projects is restricted to team members directly involved in those projects. If you have a specific project-related need, please submit a new request with detailed justification.",
-  },
-];
 
 const getStatusColor = (status: string) => {
   switch (status) {
-    case "Pending":
+    case "CREATED":
       return "warning";
-    case "Approved":
+    case "APPROVED":
       return "success";
-    case "Rejected":
+    case "REJECTED":
       return "error";
     default:
       return "default";
@@ -149,21 +46,40 @@ const getStatusColor = (status: string) => {
 export function RequestHistory() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [selectedRequest, setSelectedRequest] = useState<AccessRequest | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const filteredRequests = allRequests.filter((request) => {
+  const [requests, setRequests] = useState<AccessRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadRequests = async () => {
+      try {
+        const data = await getAccessRequests();
+        setRequests(data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadRequests();
+  }, []);
+
+
+  const filteredRequests = requests.filter((request) => {
     const matchesSearch =
-      request.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.folder.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.user.toLowerCase().includes(searchTerm.toLowerCase());
+      request.id.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.folderPath.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.employeeName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "All" || request.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  const handleViewDetails = (request: any) => {
+  const handleViewDetails = (request: AccessRequest) => {
     setSelectedRequest(request);
     setOpenDialog(true);
   };
@@ -216,9 +132,9 @@ export function RequestHistory() {
               }}
             >
               <MenuItem value="All">All Status</MenuItem>
-              <MenuItem value="Pending">Pending</MenuItem>
-              <MenuItem value="Approved">Approved</MenuItem>
-              <MenuItem value="Rejected">Rejected</MenuItem>
+              <MenuItem value="CREATED">Pending</MenuItem>
+              <MenuItem value="APPROVED">Approved</MenuItem>
+              <MenuItem value="REJECTED">Rejected</MenuItem>
             </TextField>
           </Grid>
         </Grid>
@@ -227,7 +143,7 @@ export function RequestHistory() {
       <Paper sx={{ borderRadius: 2, overflow: "hidden" }}>
         <Box sx={{ p: { xs: 2, sm: 3 }, borderBottom: "1px solid #e0e0e0" }}>
           <Typography variant="h6" fontWeight={600} sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }}>
-            All Requests ({filteredRequests.length})
+            All Requests ({requests.length})
           </Typography>
         </Box>
         <TableContainer sx={{ overflowX: "auto" }}>
@@ -243,37 +159,50 @@ export function RequestHistory() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredRequests.map((request) => (
-                <TableRow
-                  key={request.id}
-                  sx={{
-                    "&:hover": { backgroundColor: "#f5f7fa" },
-                  }}
-                >
-                  <TableCell sx={{ fontWeight: 500, color: "#1976d2" }}>
-                    {request.id}
-                  </TableCell>
-                  <TableCell>{request.user}</TableCell>
-                  <TableCell>{request.folder}</TableCell>
-                  <TableCell>{request.date}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={request.status}
-                      size="small"
-                      color={getStatusColor(request.status)}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <IconButton
-                      size="small"
-                      color="primary"
-                      onClick={() => handleViewDetails(request)}
+              {loading ? (
+                [...Array(5)].map((_, index) => (
+                  <TableRow key={index}>
+                    <TableCell><Skeleton /></TableCell>
+                    <TableCell><Skeleton /></TableCell>
+                    <TableCell><Skeleton /></TableCell>
+                    <TableCell><Skeleton /></TableCell>
+                    <TableCell><Skeleton width={80} /></TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                
+                  filteredRequests.map((request) => (
+                    <TableRow
+                      key={request.id}
+                      sx={{
+                        "&:hover": { backgroundColor: "#f5f7fa" },
+                      }}
                     >
-                      <Visibility />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
+                      <TableCell sx={{ fontWeight: 500, color: "#1976d2" }}>
+                        {request.id}
+                      </TableCell>
+                      <TableCell>{request.employeeName}</TableCell>
+                      <TableCell>{request.folderPath}</TableCell>
+                      <TableCell>{new Date(request.createdAt).toDateString()}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={request.status}
+                          size="small"
+                          color={getStatusColor(request.status)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => handleViewDetails(request)}
+                        >
+                          <Visibility />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
             </TableBody>
           </Table>
         </TableContainer>
@@ -319,10 +248,7 @@ export function RequestHistory() {
                           Requester
                         </Typography>
                         <Typography variant="body1" fontWeight={500}>
-                          {selectedRequest.user}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {selectedRequest.email}
+                          {selectedRequest.employeeName}
                         </Typography>
                       </Box>
                     </Box>
@@ -336,7 +262,7 @@ export function RequestHistory() {
                           Request Date
                         </Typography>
                         <Typography variant="body1" fontWeight={500}>
-                          {selectedRequest.date}
+                          {new Date(selectedRequest.createdAt).toLocaleDateString()}
                         </Typography>
                       </Box>
                     </Box>
@@ -350,7 +276,7 @@ export function RequestHistory() {
                           Shared Folder
                         </Typography>
                         <Typography variant="body1" fontWeight={500}>
-                          {selectedRequest.folder}
+                          {selectedRequest.folderPath}
                         </Typography>
                       </Box>
                     </Box>
@@ -364,7 +290,21 @@ export function RequestHistory() {
                           Department
                         </Typography>
                         <Typography variant="body1" fontWeight={500}>
-                          {selectedRequest.department}
+                          {selectedRequest.employeeDepartment}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+                      <EditDocument color="action" />
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          Access
+                        </Typography>
+                        <Typography variant="body1" fontWeight={500}>
+                          {selectedRequest.accessType === "READ" ? "Read" : "Write"}
                         </Typography>
                       </Box>
                     </Box>
@@ -382,7 +322,7 @@ export function RequestHistory() {
                   </Paper>
                 </Box>
 
-                {selectedRequest.status !== "Pending" && (
+                {selectedRequest.status !== "CREATED" && (
                   <>
                     <Divider sx={{ my: 3 }} />
 
@@ -390,17 +330,17 @@ export function RequestHistory() {
                       sx={{
                         p: 3,
                         borderRadius: 2,
-                        backgroundColor: selectedRequest.status === "Approved" ? "#e8f5e9" : "#ffebee",
+                        backgroundColor: selectedRequest.status === "APPROVED" ? "#e8f5e9" : "#ffebee",
                       }}
                     >
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-                        {selectedRequest.status === "Approved" ? (
+                        {selectedRequest.status === "APPROVED" ? (
                           <CheckCircle color="success" />
                         ) : (
                           <Cancel color="error" />
                         )}
                         <Typography variant="h6" fontWeight={600}>
-                          {selectedRequest.status === "Approved" ? "Approved" : "Rejected"}
+                          {selectedRequest.status === "APPROVED" ? "Approved" : "Rejected"}
                         </Typography>
                       </Box>
 
@@ -410,7 +350,7 @@ export function RequestHistory() {
                             Reviewed By
                           </Typography>
                           <Typography variant="body1" fontWeight={500}>
-                            {selectedRequest.reviewedBy}
+                            {selectedRequest.managerName}
                           </Typography>
                         </Grid>
                         <Grid item xs={12} sm={6}>
@@ -418,20 +358,34 @@ export function RequestHistory() {
                             Review Date
                           </Typography>
                           <Typography variant="body1" fontWeight={500}>
-                            {selectedRequest.reviewDate}
+                            {selectedRequest.decisionDate ? new Date(selectedRequest.decisionDate).toDateString() : "N/A"}
                           </Typography>
                         </Grid>
                       </Grid>
 
-                      {selectedRequest.reviewComments && (
-                        <Box sx={{ mt: 2 }}>
-                          <Typography variant="caption" color="text.secondary">
-                            {selectedRequest.status === "Approved" ? "Comments" : "Rejection Reason"}
-                          </Typography>
-                          <Typography variant="body2" sx={{ mt: 0.5 }}>
-                            {selectedRequest.reviewComments}
-                          </Typography>
-                        </Box>
+
+                      {selectedRequest.status === "APPROVED" ? (
+                        selectedRequest.expirationDate && (
+                          <Box sx={{ mt: 2 }}>
+                            <Typography variant="caption" color="text.secondary">
+                              Expiration Date
+                            </Typography>
+                            <Typography variant="body1" fontWeight={500}>
+                              {new Date(selectedRequest.expirationDate).toDateString()}
+                            </Typography>
+                          </Box>
+                        )
+                      ) : (
+                        selectedRequest.rejectionReason && (
+                          <Box sx={{ mt: 2 }}>
+                            <Typography variant="caption" color="text.secondary">
+                              Rejection Reason
+                            </Typography>
+                            <Typography variant="body2" sx={{ mt: 0.5 }}>
+                              {selectedRequest.rejectionReason}
+                            </Typography>
+                          </Box>
+                        )
                       )}
                     </Box>
                   </>
