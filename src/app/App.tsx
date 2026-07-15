@@ -4,7 +4,8 @@ import { SnackbarProvider } from "notistack";
 
 export default function App() {
   return  (
-  <SnackbarProvider>
-<RouterProvider router={router} />
-  </SnackbarProvider> )
+    <SnackbarProvider>
+      <RouterProvider router={router} />
+    </SnackbarProvider> 
+  )
 }
