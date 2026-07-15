@@ -30,10 +30,10 @@ const drawerWidth = 260;
 
 const menuItems = [
   { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
-  { text: "Create Request", icon: <CreateNewFolder />, path: "/dashboard/create-request" },
+  { text: "Create Request", icon: <CreateNewFolder />, path: "/dashboard/create-request", roles: ["EMPLOYEE"] },
   { text: "Request History", icon: <History />, path: "/dashboard/request-history" },
-  { text: "Approvals", icon: <CheckCircle />, path: "/dashboard/approvals" },
-  { text: "User Management", icon: <People />, path: "/dashboard/users" },
+  { text: "Approvals", icon: <CheckCircle />, path: "/dashboard/approvals", roles: ["MANAGER", "ADMIN"] },
+  { text: "User Management", icon: <People />, path: "/dashboard/users", roles: ["ADMIN"] },
 ];
 
 export function Layout() {
@@ -42,6 +42,12 @@ export function Layout() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const role = localStorage.getItem("role");
+  const visibleMenuItems = menuItems.filter(
+    item => item.roles == null || item.roles.includes(role ?? "")
+  );
+
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -68,7 +74,7 @@ export function Layout() {
       </Box>
 
       <List sx={{ px: 1.5 }}>
-        {menuItems.map((item) => (
+        {visibleMenuItems.map((item) => (
           <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
             <ListItemButton
               onClick={() => handleNavigate(item.path)}
