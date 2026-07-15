@@ -16,6 +16,7 @@ import {
 import { CheckCircle, Cancel, Person, Folder, CalendarToday, Description, EditDocument, Edit, Visibility } from "@mui/icons-material";
 import { AccessRequest } from "../types/types";
 import { acceptRequest, getPendingRequests, rejectRequest } from "../service/accessRequestService";
+import { enqueueSnackbar, useSnackbar } from "notistack";
 
 
 export function ApprovalScreen() {
@@ -25,8 +26,8 @@ export function ApprovalScreen() {
   const [selectedRequest, setSelectedRequest] = useState<AccessRequest | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [expirationDate, setExpirationDate] = useState<string>(new Date().toISOString().split("T")[0]);
-  const [actionTaken, setActionTaken] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(!isMobile);
+  const {enqueueSnackbar} = useSnackbar();
 
   useEffect(() => {
     const loadRequests = async () => {
@@ -36,6 +37,7 @@ export function ApprovalScreen() {
         setSelectedRequest(requests[0]);
       } catch (error) {
         console.error("Failed to load pending requests", error);
+        enqueueSnackbar("Failed to load pending requests", { variant: "error" });
       }
     }
 
@@ -46,18 +48,19 @@ export function ApprovalScreen() {
     if (expirationDate) {
       try {
         await acceptRequest(selectedRequest!.id, expirationDate)
-
-        setActionTaken("approved");
+        enqueueSnackbar("Request approved successfully!", { variant: "success" });
+     
         const updatedRequests = pendingRequests.filter(
           request => request.id !== selectedRequest!.id
         );
 
         setPendingRequests(updatedRequests);
         setSelectedRequest(updatedRequests.length > 0 ? updatedRequests[0] : null);
-        setTimeout(() => setActionTaken(null), 3000);
 
-      } catch (error) {
-        setActionTaken("error");
+
+      } catch (error: any) {
+     
+        enqueueSnackbar( "Failed to approve request: \n" + (error.response?.data?.message ?? "An error occurred"), { variant: "error" });
         console.error("Failed to approve request", error);
       }
     };
@@ -67,20 +70,20 @@ export function ApprovalScreen() {
       try {
         await rejectRequest(selectedRequest!.id, rejectionReason);
 
-        setActionTaken("rejected");
+   
+        enqueueSnackbar("Request rejected successfully!", { variant: "success" });
         const updatedRequests = pendingRequests.filter(
           request => request.id !== selectedRequest!.id
         );
 
         setPendingRequests(updatedRequests);
         setSelectedRequest(updatedRequests.length > 0 ? updatedRequests[0] : null);
-        setTimeout(() => {
-          setActionTaken(null);
-          setRejectionReason("");
-        }, 3000);
+        setRejectionReason("");
 
-      } catch (error) {
-        setActionTaken("error");
+        
+      } catch (error: any) {
+  
+        enqueueSnackbar("Failed to reject request: \n" + (error.response?.data?.message ?? "An error occurred"), { variant: "error" });
         console.error("Failed to reject request", error);
       }
     }
@@ -135,14 +138,6 @@ export function ApprovalScreen() {
         Approval Queue
       </Typography>
 
-      {actionTaken && (
-        <Alert
-          severity={actionTaken === "approved" ? "success" : "error"}
-          sx={{ mb: 3 }}
-        >
-          Request {selectedRequest!.id} has been {actionTaken}!
-        </Alert>
-      )}
 
       <Grid container spacing={{ xs: 2, sm: 3 }}>
         <Grid item xs={12} md={4} sx={{ display: { xs: showDetails ? "none" : "block", md: "block" } }}>

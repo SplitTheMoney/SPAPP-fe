@@ -20,7 +20,9 @@ import {
 } from "@mui/icons-material";
 import { getAccessRequests } from "../service/accessRequestService";
 import { useEffect, useState } from "react";
-import { AccessRequest } from "../types/types";
+import { AccessRequest, SharedFolder } from "../types/types";
+import { getAllFolders } from "../service/sharedFolderService";
+
 
 
 const getStatusColor = (status: string) => {
@@ -38,7 +40,10 @@ const getStatusColor = (status: string) => {
 
 export function Dashboard() {
   const [requests, setRequests] = useState<AccessRequest[]>([]);
+  const [folders, setFolders] = useState<SharedFolder[]>([]);
   const [loading, setLoading] = useState(true);
+
+
 
   const pendingRequests = requests.filter(
     (r) => r.status === "CREATED"
@@ -76,7 +81,7 @@ export function Dashboard() {
     },
     {
       title: "Total Folders",
-      value: requests.length,
+      value: folders.length,
       icon: <Folder sx={{ fontSize: 40 }} />,
       color: "#1976d2",
       bgColor: "#e3f2fd",
@@ -99,6 +104,22 @@ export function Dashboard() {
     loadRequests();
   }, []);
 
+  useEffect(() => {
+    const loadFolders = async () => {
+      try {
+        const data = await getAllFolders();
+        setFolders(data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    loadFolders();
+  }, []);
+
+  if (loading) {
+    return <p>Loading...</p>;
+  }
 
   return (
     <Box>

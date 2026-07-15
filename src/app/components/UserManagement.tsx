@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Paper,
@@ -22,73 +22,40 @@ import {
   useTheme,
 } from "@mui/material";
 import { Add, Edit, Delete, PersonAdd } from "@mui/icons-material";
+import { createUser, deleteUser, getUsers, updateUser } from "../service/adminService";
+import { CreateUserDTO, User } from "../types/types";
 
-const initialUsers = [
-  {
-    id: 1,
-    name: "John Smith",
-    email: "john.smith@company.com",
-    role: "Employee",
-    department: "Finance",
-    status: "Active",
-  },
-  {
-    id: 2,
-    name: "Sarah Johnson",
-    email: "sarah.johnson@company.com",
-    role: "Manager",
-    department: "HR",
-    status: "Active",
-  },
-  {
-    id: 3,
-    name: "Mike Davis",
-    email: "mike.davis@company.com",
-    role: "IT Technician",
-    department: "IT",
-    status: "Active",
-  },
-  {
-    id: 4,
-    name: "Emily Chen",
-    email: "emily.chen@company.com",
-    role: "Employee",
-    department: "Marketing",
-    status: "Active",
-  },
-  {
-    id: 5,
-    name: "Robert Taylor",
-    email: "robert.taylor@company.com",
-    role: "Administrator",
-    department: "IT",
-    status: "Active",
-  },
-  {
-    id: 6,
-    name: "Lisa Anderson",
-    email: "lisa.anderson@company.com",
-    role: "Manager",
-    department: "Operations",
-    status: "Active",
-  },
-];
-
-const roles = ["Employee", "Manager", "IT Technician", "Administrator"];
-const departments = ["Finance", "HR", "IT", "Marketing", "Operations", "Sales", "Legal"];
+const roles = ["EMPLOYEE", "MANAGER", "ADMIN"];
+const departments = ["FINANCE", "HR", "IT", "MARKETING", "OPERATIONS", "SALES", "LEGAL"];
 
 export function UserManagement() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const [users, setUsers] = useState(initialUsers);
+  const userRole = localStorage.getItem("role");
+  const canAddUser = userRole === "ADMIN";
+  const [users, setUsers] = useState<User[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
-  const [editingUser, setEditingUser] = useState<any>(null);
-  const [formData, setFormData] = useState({
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [formData, setFormData] = useState<CreateUserDTO>({
     name: "",
     email: "",
-    role: "",
+    password: "",
     department: "",
+    role: ""
   });
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const users = await getUsers();
+        setUsers(users);
+      } catch (err: any) {
+        console.error("Failed to load users", err.response?.data?.message);
+      }
+    } 
+
+    loadUsers();
+  }, []);
 
   const handleOpenDialog = (user?: any) => {
     if (user) {
@@ -96,12 +63,13 @@ export function UserManagement() {
       setFormData({
         name: user.name,
         email: user.email,
+        password: "",
         role: user.role,
         department: user.department,
       });
     } else {
       setEditingUser(null);
-      setFormData({ name: "", email: "", role: "", department: "" });
+      setFormData({ name: "", email: "", password: "", role: "", department: "" });
     }
     setOpenDialog(true);
   };
@@ -109,43 +77,40 @@ export function UserManagement() {
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setEditingUser(null);
-    setFormData({ name: "", email: "", role: "", department: "" });
+    setFormData({ name: "", email: "", password: "", role: "", department: "" });
   };
 
-  const handleSaveUser = () => {
+  const handleSaveUser = async () => {
     if (editingUser) {
+      const user = await updateUser(editingUser.id, formData);
       setUsers(
-        users.map((user) =>
-          user.id === editingUser.id ? { ...user, ...formData } : user
+        users.map((u) =>
+          u.id === editingUser?.id ? user : u
         )
       );
     } else {
+      const user = await createUser(formData);
       setUsers([
         ...users,
-        {
-          id: users.length + 1,
-          ...formData,
-          status: "Active",
-        },
+        user
       ]);
     }
     handleCloseDialog();
   };
 
-  const handleDeleteUser = (id: number) => {
-    setUsers(users.filter((user) => user.id !== id));
+  const handleDeleteUser = async (id: number) => {
+    const user = await deleteUser(id);
+    setUsers(users.filter((u) => u.id !== user.id));
   };
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case "Administrator":
+      case "ADMIN":
         return "error";
-      case "Manager":
-        return "primary";
-      case "IT Technician":
+      case "MANAGER":
         return "secondary";
       default:
-        return "default";
+        return "primary";
     }
   };
 
@@ -166,15 +131,17 @@ export function UserManagement() {
         >
           User Management
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={() => handleOpenDialog()}
-          size="large"
-          fullWidth={isMobile}
-        >
-          Add User
-        </Button>
+        {canAddUser && (
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => handleOpenDialog()}
+            size="large"
+            fullWidth={isMobile}
+          >
+            Add User
+          </Button>
+        )}
       </Box>
 
       <Paper sx={{ borderRadius: 2, overflow: "hidden" }}>
@@ -191,7 +158,6 @@ export function UserManagement() {
                 <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Role</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Department</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -213,9 +179,6 @@ export function UserManagement() {
                     />
                   </TableCell>
                   <TableCell>{user.department}</TableCell>
-                  <TableCell>
-                    <Chip label={user.status} size="small" color="success" />
-                  </TableCell>
                   <TableCell>
                     <IconButton
                       size="small"
@@ -268,6 +231,14 @@ export function UserManagement() {
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
+            />
+            <TextField
+              label={editingUser? "New Password" : "Password"}
+              type="password"
+              fullWidth
+              value={formData.password}
+              onChange={(e) => setFormData({...formData, password: e.target.value })}
+              required={!editingUser}
             />
             <TextField
               select

@@ -4,6 +4,7 @@ import api from "./api/axios";
 export const login = async (data: LoginRequestDTO): Promise<LoginResponseDTO> => {
   const response = await api.post("/auth/login", data);
   localStorage.setItem("token", response.data.token);
+  localStorage.setItem("role", response.data.role);
   return response.data;
 };
 
