@@ -23,6 +23,7 @@ import {
   Divider,
   useMediaQuery,
   useTheme,
+  Skeleton,
 } from "@mui/material";
 import { Search, FilterList, Visibility, Person, Folder, CalendarToday, Description, CheckCircle, Cancel, EditDocument } from "@mui/icons-material";
 import { getAccessRequests } from "../service/accessRequestService";
@@ -68,9 +69,6 @@ export function RequestHistory() {
     loadRequests();
   }, []);
 
-  if (loading) {
-    return <p>Loading...</p>;
-  }
 
   const filteredRequests = requests.filter((request) => {
     const matchesSearch =
@@ -161,37 +159,50 @@ export function RequestHistory() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredRequests.map((request) => (
-                <TableRow
-                  key={request.id}
-                  sx={{
-                    "&:hover": { backgroundColor: "#f5f7fa" },
-                  }}
-                >
-                  <TableCell sx={{ fontWeight: 500, color: "#1976d2" }}>
-                    {request.id}
-                  </TableCell>
-                  <TableCell>{request.employeeName}</TableCell>
-                  <TableCell>{request.folderPath}</TableCell>
-                  <TableCell>{new Date(request.createdAt).toDateString()}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={request.status}
-                      size="small"
-                      color={getStatusColor(request.status)}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <IconButton
-                      size="small"
-                      color="primary"
-                      onClick={() => handleViewDetails(request)}
+              {loading ? (
+                [...Array(5)].map((_, index) => (
+                  <TableRow key={index}>
+                    <TableCell><Skeleton /></TableCell>
+                    <TableCell><Skeleton /></TableCell>
+                    <TableCell><Skeleton /></TableCell>
+                    <TableCell><Skeleton /></TableCell>
+                    <TableCell><Skeleton width={80} /></TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                
+                  filteredRequests.map((request) => (
+                    <TableRow
+                      key={request.id}
+                      sx={{
+                        "&:hover": { backgroundColor: "#f5f7fa" },
+                      }}
                     >
-                      <Visibility />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
+                      <TableCell sx={{ fontWeight: 500, color: "#1976d2" }}>
+                        {request.id}
+                      </TableCell>
+                      <TableCell>{request.employeeName}</TableCell>
+                      <TableCell>{request.folderPath}</TableCell>
+                      <TableCell>{new Date(request.createdAt).toDateString()}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={request.status}
+                          size="small"
+                          color={getStatusColor(request.status)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => handleViewDetails(request)}
+                        >
+                          <Visibility />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
             </TableBody>
           </Table>
         </TableContainer>
@@ -351,7 +362,7 @@ export function RequestHistory() {
                           </Typography>
                         </Grid>
                       </Grid>
-                      
+
 
                       {selectedRequest.status === "APPROVED" ? (
                         selectedRequest.expirationDate && (
@@ -364,15 +375,15 @@ export function RequestHistory() {
                             </Typography>
                           </Box>
                         )
-                      ):(
+                      ) : (
                         selectedRequest.rejectionReason && (
                           <Box sx={{ mt: 2 }}>
-                          <Typography variant="caption" color="text.secondary">
-                          Rejection Reason
-                          </Typography>
-                          <Typography variant="body2" sx={{ mt: 0.5 }}>
-                          {selectedRequest.rejectionReason}
-                          </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              Rejection Reason
+                            </Typography>
+                            <Typography variant="body2" sx={{ mt: 0.5 }}>
+                              {selectedRequest.rejectionReason}
+                            </Typography>
                           </Box>
                         )
                       )}
