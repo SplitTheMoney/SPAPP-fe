@@ -10,6 +10,7 @@ import {
   TableHead,
   TableRow,
   Chip,
+  Skeleton,
 } from "@mui/material";
 import {
   PendingActions,
@@ -98,9 +99,6 @@ export function Dashboard() {
     loadRequests();
   }, []);
 
-  if (loading) {
-    return <p>Loading...</p>;
-  }
 
   return (
     <Box>
@@ -145,7 +143,13 @@ export function Dashboard() {
                     fontWeight={700}
                     sx={{ fontSize: { xs: "1.75rem", sm: "3rem" } }}
                   >
-                    {stat.value}
+                    <Typography variant="h3">
+                      {loading ? (
+                        <Skeleton width={80} />
+                      ) : (
+                        stat.value
+                      )}
+                    </Typography>
                   </Typography>
                 </Box>
                 <Box
@@ -186,28 +190,39 @@ export function Dashboard() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {requests.slice(0, 5).map((request) => (
-                <TableRow
-                  key={request.id}
-                  sx={{
-                    "&:hover": { backgroundColor: "#f5f7fa" },
-                  }}
-                >
-                  <TableCell sx={{ fontWeight: 500, color: "#1976d2" }}>
-                    {request.id}
-                  </TableCell>
-                  <TableCell>{request.employeeName}</TableCell>
-                  <TableCell>{request.folderPath}</TableCell>
-                  <TableCell>{new Date(request.createdAt).toDateString()}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={request.status}
-                      size="small"
-                      color={getStatusColor(request.status)}
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
+              {loading ? (
+                [...Array(5)].map((_, index) => (
+                  <TableRow key={index}>
+                    <TableCell><Skeleton /></TableCell>
+                    <TableCell><Skeleton /></TableCell>
+                    <TableCell><Skeleton /></TableCell>
+                    <TableCell><Skeleton /></TableCell>
+                    <TableCell><Skeleton width={80} /></TableCell>
+                  </TableRow>
+                ))
+              ) :
+                (requests.slice(0, 5).map((request) => (
+                  <TableRow
+                    key={request.id}
+                    sx={{
+                      "&:hover": { backgroundColor: "#f5f7fa" },
+                    }}
+                  >
+                    <TableCell sx={{ fontWeight: 500, color: "#1976d2" }}>
+                      {request.id}
+                    </TableCell>
+                    <TableCell>{request.employeeName}</TableCell>
+                    <TableCell>{request.folderPath}</TableCell>
+                    <TableCell>{new Date(request.createdAt).toDateString()}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={request.status}
+                        size="small"
+                        color={getStatusColor(request.status)}
+                      />
+                    </TableCell>
+                  </TableRow>
+                )))}
             </TableBody>
           </Table>
         </TableContainer>
